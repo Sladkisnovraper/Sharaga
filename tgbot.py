@@ -1,53 +1,45 @@
-import telebot
 import logging
 import requests
 from bs4 import BeautifulSoup
+import telebot
 
-# Настройка логирования
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO)
-
-# Токен вашего бота
-TOKEN = '6594143932:AAEwYI8HxNfFPpCRqjEKz9RngAfcUvmnh8M'
-
-# Создание экземпляра бота
-bot = telebot.TeleBot(TOKEN)
-
-# Функция для получения ссылки на последнюю таблицу расписания
-def get_latest_schedule_link():
+# Функция для получения ссылки на расписание
+def get_schedule_link():
     try:
         url = "https://tcek63.ru/studentam/raspisanie-zanyatiy/"
         response = requests.get(url)
         soup = BeautifulSoup(response.content, "html.parser")
-        schedule_table = soup.find('div', class_='acc_body').find('table')
-        if schedule_table:
-            schedule_link = schedule_table.find('tr', class_='head').find('a')['href']
-            return schedule_link
-        else:
-            logging.error("Не удалось найти ссылку на таблицу расписания")
-            return None
+        schedule_table = soup.find('div', class_='acc_body').find('table').find('tbody')
+        schedule_links = [a['href'] for a in schedule_table.find_all('a')]
+        return schedule_links
     except Exception as e:
-        logging.error(f"Ошибка при получении ссылки на расписание: {e}")
+        print(f"Ошибка при получении ссылки на расписание: {e}")
         return None
 
 # Функция для отправки расписания пользователю
-def send_schedule(chat_id):
-    schedule_url = get_latest_schedule_link()
-    if schedule_url:
-        bot.send_message(chat_id, f"Ссылка на последнюю таблицу расписания: {schedule_url}")
+def send_schedule(bot, schedule_links):
+    if schedule_links:
+        for link in schedule_links:
+            bot.send_message(bot.get_me().id, f"Ссылка на расписание: {link}")
     else:
-        bot.send_message(chat_id, "Не удалось найти ссылку на расписание.")
+        bot.send_message(bot.get_me().id, "Не удалось найти ссылку на расписание.")
 
-# Обработчик команды /start
-@bot.message_handler(commands=['start'])
-def start_message(message):
-    bot.send_message(message.chat.id, 'Привет! Чтобы получить ссылку на последнюю таблицу расписания, введите /get_schedule.')
+# Получение токена вашего бота
+bot_token = '6594143932:AAEwYI8HxNfFPpCRqjEKz9RngAfcUvmnh8M'
 
-# Обработчик команды /get_schedule
-@bot.message_handler(commands=['get_schedule'])
-def get_schedule(message):
-    send_schedule(message.chat.id)
+# Создание экземпляра бота
+bot = telebot.TeleBot(bot_token)
 
-# Запуск бота
-bot.polling()
+# Основная функция
+def main():
+    # Получение ссылок на расписание
+    schedule_links = get_schedule_link()
+
+    # Отправка расписания пользователю
+    if schedule_links:
+        send_schedule(bot, schedule_links)
+    else:
+        print("Ошибка: не удалось получить ссылки на расписание.")
+
+if __name__ == "__main__":
+    main()
