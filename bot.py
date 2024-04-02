@@ -65,5 +65,6 @@ def main() -> None:
     # Бот будет работать, пока вы не остановите его явно
     updater.idle()
 
-if name == 'main':
+if __name__ == '__main__':
     main()
+    
