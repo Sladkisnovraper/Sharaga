@@ -60,6 +60,8 @@ def handle_schedule_button(message):
     # Отправка содержимого расписания и ссылок на таблицы пользователю в личные сообщения
     if schedule_contents and schedule_links:
         send_schedule_to_user(bot, message.from_user.id, schedule_contents, schedule_links)
+        # Удаление кнопки "Го узнаем"
+        bot.send_message(message.chat.id, "Вот тебе расписание, если что, можешь нажать кнопку 'Стартуем', чтобы вернуться к началу.", reply_markup=types.ReplyKeyboardRemove())
     else:
         bot.send_message(message.from_user.id, "Ошибка: не удалось получить содержимое расписания или ссылки на таблицы.")
 
