@@ -9,7 +9,7 @@ logging.basicConfig(
     level=logging.INFO)
 
 # Токен вашего бота
-TOKEN = 'YOUR_TELEGRAM_BOT_TOKEN'
+TOKEN = '6594143932:AAEwYI8HxNfFPpCRqjEKz9RngAfcUvmnh8M'
 
 # Создание экземпляра бота
 bot = telebot.TeleBot(TOKEN)
