@@ -27,25 +27,24 @@ def send_schedule_to_user(bot, user_id, schedule_contents, schedule_links):
     else:
         bot.send_message(user_id, "Не удалось найти содержимое расписания или ссылки на таблицы.")
 
-# Функция для удаления сообщений бота с расписанием и ссылками
-def delete_messages_with_links(bot, chat_id, message_ids):
-    for message_id in message_ids:
-        message = bot.get_message(chat_id, message_id)
-        if message.text and any(link in message.text for link in ['http', 'https']):
-            bot.delete_message(chat_id, message_id)
-
 # Получение токена вашего бота
 bot_token = '6594143932:AAEwYI8HxNfFPpCRqjEKz9RngAfcUvmnh8M'
 
 # Создание экземпляра бота
 bot = telebot.TeleBot(bot_token)
 
-# Словарь для хранения идентификаторов сообщений с расписанием и ссылками по каждому пользователю
-user_schedule_messages = {}
-
 # Обработчик команды /start
 @bot.message_handler(commands=['start'])
 def handle_start(message):
+    # Создание клавиатуры
+    keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
+    button_start = types.KeyboardButton('Стартуем')
+    keyboard.add(button_start)
+    bot.send_message(message.chat.id, "Привет! Нажми кнопку 'Стартуем', чтобы начать", reply_markup=keyboard)
+
+# Обработчик нажатия кнопки "Стартуем"
+@bot.message_handler(func=lambda message: message.text == 'Стартуем')
+def handle_start_button(message):
     # Создание клавиатуры
     keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
     button_schedule = types.KeyboardButton('Го узнаем')
@@ -60,34 +59,9 @@ def handle_schedule_button(message):
 
     # Отправка содержимого расписания и ссылок на таблицы пользователю в личные сообщения
     if schedule_contents and schedule_links:
-        sent_message = send_schedule_to_user(bot, message.from_user.id, schedule_contents, schedule_links)
-        # Сохраняем идентификаторы отправленных сообщений
-        if sent_message:
-            user_schedule_messages[message.from_user.id] = sent_message.message_id
-        # Меняем клавиатуру
-        keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-        button_delete = types.KeyboardButton('Заебало сотри это')
-        keyboard.add(button_delete)
-        bot.send_message(message.chat.id, "Вот тебе расписание, если что, можешь удалить", reply_markup=keyboard)
+        send_schedule_to_user(bot, message.from_user.id, schedule_contents, schedule_links)
     else:
         bot.send_message(message.from_user.id, "Ошибка: не удалось получить содержимое расписания или ссылки на таблицы.")
-
-# Обработчик нажатия кнопки "Заебало сотри это"
-@bot.message_handler(func=lambda message: message.text == 'Заебало сотри это')
-def handle_delete_button(message):
-    # Получаем идентификаторы отправленных сообщений с расписанием и ссылками
-    message_ids = user_schedule_messages.get(message.from_user.id)
-    if message_ids:
-        # Удаляем сообщения с ссылками
-        delete_messages_with_links(bot, message.chat.id, message_ids)
-        bot.send_message(message.chat.id, "Балдеж")
-        # Меняем клавиатуру
-        keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-        button_schedule = types.KeyboardButton('Го узнаем')
-        keyboard.add(button_schedule)
-        bot.send_message(message.chat.id, "Го узнаем", reply_markup=keyboard)
-    else:
-        bot.send_message(message.chat.id, "Не найдено сообщений с расписанием для удаления.")
 
 # Основная функция
 def main():
