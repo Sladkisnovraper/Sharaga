@@ -33,6 +33,8 @@ def handle_message(msg):
             on_start(chat_id)
         elif command == '/get_schedule':
             on_get_schedule(chat_id)
+        elif command == '/auto':
+            on_auto(chat_id)
         else:
             on_unknown(chat_id)
 
@@ -45,11 +47,15 @@ def on_get_schedule(chat_id):
     # Отправляем ссылку на таблицу расписания
     bot.sendMessage(chat_id, "Ссылка на таблицу расписания: https://tcek63.ru/studentam/raspisanie-zanyatiy/")
     # Запрашиваем у пользователя желание получить ссылку на последнюю таблицу автоматически
-    bot.sendMessage(chat_id, "Хочешь автоматом? Если да, напиши 'Да'.")
+    bot.sendMessage(chat_id, "Хочешь автоматом? Если да, напиши /auto.")
+
+# Функция для обработки команды /auto
+def on_auto(chat_id):
+    handle_auto_schedule_request(chat_id, 'auto')
 
 # Функция для обработки ответа пользователя на предложение получить ссылку на таблицу автоматически
 def handle_auto_schedule_request(chat_id, answer):
-    if answer.lower() == 'да':
+    if answer.lower() == 'auto':
         schedule_url = get_latest_schedule_link()
         if schedule_url:
             bot.sendMessage(chat_id, "Последняя таблица расписания: " + schedule_url)
@@ -85,4 +91,4 @@ def main():
 
 if __name__ == '__main__':
     main()
-   
+    
