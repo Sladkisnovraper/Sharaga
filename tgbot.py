@@ -3,21 +3,30 @@ import logging
 import requests
 from bs4 import BeautifulSoup
 
+# Настройка логирования
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO)
+
 # Функция для получения ссылки на последнюю таблицу расписания
 def get_latest_schedule_link():
-    url = "https://tcek63.ru/studentam/raspisanie-zanyatiy/"
-    response = requests.get(url)
-    soup = BeautifulSoup(response.content, "html.parser")
-    links = soup.find_all("a")
-    for link in links:
-        if "РАСПИСАНИЕ ЗАНЯТИЙ ОТДЕЛЕНИЯ СПСИПБ" in link.text:
-            schedule_url = link.get("href")
-            return schedule_url
-    return None
+    try:
+        url = "https://tcek63.ru/studentam/raspisanie-zanyatiy/"
+        response = requests.get(url)
+        soup = BeautifulSoup(response.content, "html.parser")
+        links = soup.find_all("a")
+        for link in links:
+            if "РАСПИСАНИЕ ЗАНЯТИЙ ОТДЕЛЕНИЯ СПСИПБ" in link.text:
+                schedule_url = link.get("href")
+                return schedule_url
+        logging.error("Не удалось получить ссылку на расписание")
+        return None
+    except Exception as e:
+        logging.error(f"Ошибка при получении ссылки на расписание: {e}")
+        return None
 
 # Функция для отправки расписания пользователю
 def send_schedule(chat_id):
-    # Получаем ссылку на последнюю таблицу расписания
     schedule_url = get_latest_schedule_link()
     if schedule_url:
         bot.sendMessage(chat_id, "Ссылка на последнюю таблицу расписания: " + schedule_url)
@@ -31,9 +40,9 @@ def check_website(url):
         if response.status_code == 200:
             return "Сайт доступен."
         else:
-            return "Сайт недоступен. Статус код: " + str(response.status_code)
+            return f"Сайт недоступен. Статус код: {response.status_code}"
     except Exception as e:
-        return "Ошибка при проверке доступности сайта: " + str(e)
+        return f"Ошибка при проверке доступности сайта: {e}"
 
 # Функция для обработки сообщений
 def handle_message(msg):
@@ -79,11 +88,6 @@ def on_unknown(chat_id):
 
 # Создание и запуск бота
 def main():
-    # Настройка логирования
-    logging.basicConfig(
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        level=logging.INFO)
-
     # Получение токена вашего бота
     TOKEN = '6594143932:AAEwYI8HxNfFPpCRqjEKz9RngAfcUvmnh8M'
 
@@ -95,10 +99,9 @@ def main():
     bot.message_loop({'chat': handle_message})
 
     # Бот начинает работу
-    print('Бот запущен. Для выхода нажмите Ctrl+C')
+    logging.info('Бот запущен. Для выхода нажмите Ctrl+C')
     while True:
         pass
 
 if __name__ == '__main__':
     main()
-    
