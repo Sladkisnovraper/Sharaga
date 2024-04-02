@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 
 # Функция для получения ссылки на последнюю таблицу расписания
 def get_schedule_link():
-    url = "https://tcek63.ru/studentam/raspisanie-zanyatiy/"
+    url = "http://tcek63.ru/studentam/raspisanie-zanyatiy/"
     response = requests.get(url)
     soup = BeautifulSoup(response.content, "html.parser")
     links = soup.find_all("a")
