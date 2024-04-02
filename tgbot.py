@@ -45,7 +45,7 @@ def handle_start(message):
 # Обработчик нажатия кнопки "Стартуем"
 @bot.message_handler(func=lambda message: message.text == 'Стартуем')
 def handle_start_button(message):
-    # Создание клавиатуры
+    # Создание клавиатуры с кнопкой "Го узнаем"
     keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
     button_schedule = types.KeyboardButton('Го узнаем')
     keyboard.add(button_schedule)
@@ -62,6 +62,11 @@ def handle_schedule_button(message):
         send_schedule_to_user(bot, message.from_user.id, schedule_contents, schedule_links)
         # Удаление кнопки "Го узнаем"
         bot.send_message(message.chat.id, "Вот тебе расписание, если что, можешь нажать кнопку 'Стартуем', чтобы вернуться к началу.", reply_markup=types.ReplyKeyboardRemove())
+        # Создание клавиатуры с кнопкой "Стартуем"
+        keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
+        button_start = types.KeyboardButton('Стартуем')
+        keyboard.add(button_start)
+        bot.send_message(message.chat.id, "Нажми кнопку 'Стартуем', чтобы начать заново", reply_markup=keyboard)
     else:
         bot.send_message(message.from_user.id, "Ошибка: не удалось получить содержимое расписания или ссылки на таблицы.")
 
