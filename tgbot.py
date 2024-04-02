@@ -38,19 +38,28 @@ def send_schedule(chat_id):
     else:
         bot.sendMessage(chat_id, "Не удалось найти ссылку на расписание")
 
-# Функция для обработки команды /start
-def on_start(msg):
+# Функция для обработки сообщений
+def handle_message(msg):
     content_type, chat_type, chat_id = telepot.glance(msg)
+    if content_type == 'text':
+        command = msg['text']
+        if command == '/start':
+            on_start(chat_id)
+        elif command == '/get_schedule':
+            on_get_schedule(chat_id)
+        else:
+            on_unknown(chat_id)
+
+# Функция для обработки команды /start
+def on_start(chat_id):
     bot.sendMessage(chat_id, "Привет! Для получения расписания введите /get_schedule")
 
 # Функция для обработки команды /get_schedule
-def on_get_schedule(msg):
-    content_type, chat_type, chat_id = telepot.glance(msg)
+def on_get_schedule(chat_id):
     send_schedule(chat_id)
 
 # Функция для обработки неизвестных команд
-def on_unknown(msg):
-    content_type, chat_type, chat_id = telepot.glance(msg)
+def on_unknown(chat_id):
     bot.sendMessage(chat_id, "Извините, я не понимаю эту команду.")
 
 # Создание и запуск бота
@@ -67,9 +76,8 @@ def main():
     global bot
     bot = telepot.Bot(TOKEN)
 
-    # Регистрация обработчиков команд
-    bot.message_loop({'chat': on_start,
-                      'callback_query': on_unknown})
+    # Регистрация обработчика сообщений
+    bot.message_loop(handle_message)
 
     # Бот начинает работу
     print('Бот запущен. Для выхода нажмите Ctrl+C')
