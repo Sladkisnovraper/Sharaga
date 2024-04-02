@@ -1,11 +1,13 @@
+   main()
+    
 import telepot
 import logging
 import requests
 from bs4 import BeautifulSoup
 
 # Функция для получения ссылки на последнюю таблицу расписания
-def get_schedule_link():
-    url = "http://tcek63.ru/studentam/raspisanie-zanyatiy/"
+def get_latest_schedule_link():
+    url = "https://tcek63.ru/studentam/raspisanie-zanyatiy/"
     response = requests.get(url)
     soup = BeautifulSoup(response.content, "html.parser")
     links = soup.find_all("a")
@@ -15,41 +17,12 @@ def get_schedule_link():
             return schedule_url
     return None
 
-# Функция для проверки доступности ссылки
-def check_schedule_link(schedule_url):
-    try:
-        response = requests.head(schedule_url)
-        if response.status_code == 200:
-            return True
-        else:
-            return False
-    except requests.exceptions.RequestException as e:
-        print("Ошибка при проверке доступности ссылки:", e)
-        return False
-
-# Функция для получения текста из ячеек 25-34 из таблицы расписания
-def get_schedule_text(schedule_url):
-    response = requests.get(schedule_url)
-    soup = BeautifulSoup(response.content, "html.parser")
-    tables = soup.find_all("table")
-    last_table = tables[-1]  # Последняя таблица
-    rows = last_table.find_all("tr")
-    schedule_text = ""
-    for row in rows[24:34]:
-        cells = row.find_all("td")
-        for cell in cells:
-            schedule_text += cell.text.strip() + "\n"
-    return schedule_text
-
 # Функция для отправки расписания пользователю
 def send_schedule(chat_id):
-    schedule_url = get_schedule_link()
+    # Получаем ссылку на последнюю таблицу расписания
+    schedule_url = get_latest_schedule_link()
     if schedule_url:
-        if check_schedule_link(schedule_url):
-            schedule_text = get_schedule_text(schedule_url)
-            bot.sendMessage(chat_id, schedule_text)
-        else:
-            bot.sendMessage(chat_id, "Ссылка на расписание недоступна.")
+        bot.sendMessage(chat_id, "Ссылка на последнюю таблицу расписания: " + schedule_url)
     else:
         bot.sendMessage(chat_id, "Не удалось найти ссылку на расписание.")
 
@@ -67,11 +40,23 @@ def handle_message(msg):
 
 # Функция для обработки команды /start
 def on_start(chat_id):
-    bot.sendMessage(chat_id, "Привет! Для получения расписания введите /get_schedule")
+    bot.sendMessage(chat_id, "Привет! Чтобы получить ссылку на последнюю таблицу расписания, введите /get_schedule.")
 
 # Функция для обработки команды /get_schedule
 def on_get_schedule(chat_id):
-    send_schedule(chat_id)
+    # Отправляем ссылку на таблицу расписания
+    bot.sendMessage(chat_id, "Ссылка на таблицу расписания: https://tcek63.ru/studentam/raspisanie-zanyatiy/")
+    # Запрашиваем у пользователя желание получить ссылку на последнюю таблицу автоматически
+    bot.sendMessage(chat_id, "Хочешь автоматом? Если да, напиши 'Да'.")
+
+# Функция для обработки ответа пользователя на предложение получить ссылку на таблицу автоматически
+def handle_auto_schedule_request(chat_id, answer):
+    if answer.lower() == 'да':
+        schedule_url = get_latest_schedule_link()
+        if schedule_url:
+            bot.sendMessage(chat_id, "Последняя таблица расписания: " + schedule_url)
+        else:
+            bot.sendMessage(chat_id, "Не удалось найти ссылку на последнюю таблицу расписания.")
 
 # Функция для обработки неизвестных команд
 def on_unknown(chat_id):
@@ -92,7 +77,8 @@ def main():
     bot = telepot.Bot(TOKEN)
 
     # Регистрация обработчика сообщений
-    bot.message_loop(handle_message)
+    bot.message_loop({'chat': handle_message,
+                      'text': handle_auto_schedule_request})
 
     # Бот начинает работу
     print('Бот запущен. Для выхода нажмите Ctrl+C')
