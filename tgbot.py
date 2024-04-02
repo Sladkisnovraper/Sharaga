@@ -3,33 +3,26 @@ import requests
 from bs4 import BeautifulSoup
 import telebot
 
-# Функция для получения ссылок на таблицы и текст из 6-й ячейки
-def get_table_info():
+# Функция для получения содержимого ссылок на расписание
+def get_schedule_content():
     try:
         url = "https://tcek63.ru/studentam/raspisanie-zanyatiy/"
         response = requests.get(url)
         soup = BeautifulSoup(response.content, "html.parser")
         schedule_table = soup.find_all('div', class_='acc_body')[3].find('table').find('tbody')
-        
-        # Создаем список кортежей, каждый кортеж содержит ссылку и текст из 6-й ячейки таблицы
-        table_info = []
-        for row in schedule_table.find_all('tr'):
-            cells = row.find_all('td')
-            if len(cells) >= 6:  # Проверяем наличие шестой ячейки
-                link = cells[5].text.strip()  # Получаем текст ссылки из шестой ячейки
-                table_info.append((link, cells[5].text.strip()))  # Добавляем ссылку и текст в список
-        return table_info
+        schedule_contents = [a.text for a in schedule_table.find_all('a')]
+        return schedule_contents
     except Exception as e:
-        print(f"Ошибка при получении ссылок на таблицы: {e}")
+        print(f"Ошибка при получении содержимого ссылок на расписание: {e}")
         return None
 
-# Функция для отправки информации пользователю в личные сообщения
-def send_info_to_user(bot, user_id, table_info):
-    if table_info:
-        for link, text in table_info:
-            bot.send_message(user_id, f"Текст из 6-й ячейки: {text}\nСсылка на таблицу: {link}")
+# Функция для отправки содержимого расписания пользователю в личные сообщения
+def send_schedule_to_user(bot, user_id, schedule_contents):
+    if schedule_contents:
+        for content in schedule_contents:
+            bot.send_message(user_id, f"Содержание расписания: {content}")
     else:
-        bot.send_message(user_id, "Не удалось найти информацию.")
+        bot.send_message(user_id, "Не удалось найти содержимое расписания.")
 
 # Получение токена вашего бота
 bot_token = '6594143932:AAEwYI8HxNfFPpCRqjEKz9RngAfcUvmnh8M'
@@ -40,19 +33,19 @@ bot = telebot.TeleBot(bot_token)
 # Обработчик команды /start
 @bot.message_handler(commands=['start'])
 def handle_start(message):
-    bot.send_message(message.chat.id, "Привет! Чтобы получить информацию о расписании, используй команду /schedule.")
+    bot.send_message(message.chat.id, "Го чекнем че по расписанию?")
 
 # Обработчик команды /schedule
 @bot.message_handler(commands=['schedule'])
 def send_schedule_command(message):
-    # Получение информации о таблицах
-    table_info = get_table_info()
+    # Получение содержимого ссылок на расписание
+    schedule_contents = get_schedule_content()
 
-    # Отправка информации пользователю в личные сообщения
-    if table_info:
-        send_info_to_user(bot, message.from_user.id, table_info)
+    # Отправка содержимого расписания пользователю в личные сообщения
+    if schedule_contents:
+        send_schedule_to_user(bot, message.from_user.id, schedule_contents)
     else:
-        bot.send_message(message.from_user.id, "Ошибка: не удалось получить информацию о расписании.")
+        bot.send_message(message.from_user.id, "Ошибка: не удалось получить содержимое расписания.")
 
 # Основная функция
 def main():
