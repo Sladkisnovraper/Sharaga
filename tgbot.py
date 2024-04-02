@@ -28,9 +28,11 @@ def send_schedule_to_user(bot, user_id, schedule_contents, schedule_links):
         bot.send_message(user_id, "Не удалось найти содержимое расписания или ссылки на таблицы.")
 
 # Функция для удаления сообщений бота с расписанием и ссылками
-def delete_schedule_messages(bot, chat_id, message_ids):
+def delete_messages_with_links(bot, chat_id, message_ids):
     for message_id in message_ids:
-        bot.delete_message(chat_id, message_id)
+        message = bot.get_message(chat_id, message_id)
+        if message.text and any(link in message.text for link in ['http', 'https']):
+            bot.delete_message(chat_id, message_id)
 
 # Получение токена вашего бота
 bot_token = '6594143932:AAEwYI8HxNfFPpCRqjEKz9RngAfcUvmnh8M'
@@ -76,8 +78,8 @@ def handle_delete_button(message):
     # Получаем идентификаторы отправленных сообщений с расписанием и ссылками
     message_ids = user_schedule_messages.get(message.from_user.id)
     if message_ids:
-        # Удаляем сообщения
-        delete_schedule_messages(bot, message.chat.id, [message_ids])
+        # Удаляем сообщения с ссылками
+        delete_messages_with_links(bot, message.chat.id, message_ids)
         bot.send_message(message.chat.id, "Балдеж")
         # Меняем клавиатуру
         keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
