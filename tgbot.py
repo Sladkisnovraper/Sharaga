@@ -2,6 +2,7 @@ import logging
 import requests
 from bs4 import BeautifulSoup
 import telebot
+from telebot import types
 
 # Функция для получения содержимого ссылок и самих ссылок на расписание
 def get_schedule_info():
@@ -35,11 +36,16 @@ bot = telebot.TeleBot(bot_token)
 # Обработчик команды /start
 @bot.message_handler(commands=['start'])
 def handle_start(message):
-    bot.send_message(message.chat.id, "Го чекнем че по расписанию?")
+    # Создание клавиатуры
+    keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
+    button_schedule = types.KeyboardButton('Го узнаем')
+    keyboard.add(button_schedule)
+    
+    bot.send_message(message.chat.id, "Че там по расписанию?", reply_markup=keyboard)
 
-# Обработчик команды /schedule
-@bot.message_handler(commands=['schedule'])
-def send_schedule_command(message):
+# Обработчик нажатия кнопки "Го узнаем"
+@bot.message_handler(func=lambda message: message.text == 'Го узнаем')
+def handle_schedule_button(message):
     # Получение содержимого ссылок и самих ссылок на расписание
     schedule_contents, schedule_links = get_schedule_info()
 
