@@ -68,9 +68,8 @@ def main():
     bot = telepot.Bot(TOKEN)
 
     # Регистрация обработчиков команд
-    bot.message_loop({'/start': on_start,
-                      '/get_schedule': on_get_schedule,
-                      telepot.helper.flavor.base.Router.unknown_command: on_unknown})
+    bot.message_loop({'chat': on_start,
+                      'callback_query': on_unknown})
 
     # Бот начинает работу
     print('Бот запущен. Для выхода нажмите Ctrl+C')
@@ -79,4 +78,4 @@ def main():
 
 if __name__ == '__main__':
     main()
-  
+    
