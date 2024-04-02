@@ -15,6 +15,18 @@ def get_schedule_link():
             return schedule_url
     return None
 
+# Функция для проверки доступности ссылки
+def check_schedule_link(schedule_url):
+    try:
+        response = requests.head(schedule_url)
+        if response.status_code == 200:
+            return True
+        else:
+            return False
+    except requests.exceptions.RequestException as e:
+        print("Ошибка при проверке доступности ссылки:", e)
+        return False
+
 # Функция для получения текста из ячеек 25-34 из таблицы расписания
 def get_schedule_text(schedule_url):
     response = requests.get(schedule_url)
@@ -33,10 +45,13 @@ def get_schedule_text(schedule_url):
 def send_schedule(chat_id):
     schedule_url = get_schedule_link()
     if schedule_url:
-        schedule_text = get_schedule_text(schedule_url)
-        bot.sendMessage(chat_id, schedule_text)
+        if check_schedule_link(schedule_url):
+            schedule_text = get_schedule_text(schedule_url)
+            bot.sendMessage(chat_id, schedule_text)
+        else:
+            bot.sendMessage(chat_id, "Ссылка на расписание недоступна.")
     else:
-        bot.sendMessage(chat_id, "Не удалось найти ссылку на расписание")
+        bot.sendMessage(chat_id, "Не удалось найти ссылку на расписание.")
 
 # Функция для обработки сообщений
 def handle_message(msg):
