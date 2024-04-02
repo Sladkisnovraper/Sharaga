@@ -24,6 +24,17 @@ def send_schedule(chat_id):
     else:
         bot.sendMessage(chat_id, "Не удалось найти ссылку на расписание.")
 
+# Функция для проверки доступности сайта
+def check_website(url):
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            return "Сайт доступен."
+        else:
+            return "Сайт недоступен. Статус код: " + str(response.status_code)
+    except Exception as e:
+        return "Ошибка при проверке доступности сайта: " + str(e)
+
 # Функция для обработки сообщений
 def handle_message(msg):
     content_type, chat_type, chat_id = telepot.glance(msg)
@@ -35,6 +46,8 @@ def handle_message(msg):
             on_get_schedule(chat_id)
         elif command == '/auto':
             on_auto(chat_id)
+        elif command == '/check':
+            on_check(chat_id)
         else:
             on_unknown(chat_id)
 
@@ -51,16 +64,14 @@ def on_get_schedule(chat_id):
 
 # Функция для обработки команды /auto
 def on_auto(chat_id):
-    handle_auto_schedule_request(chat_id, 'auto')
+    send_schedule(chat_id)
+    bot.sendMessage(chat_id, "Теперь давай проверим доступность сайта. Если хочешь проверить, напиши /check.")
 
-# Функция для обработки ответа пользователя на предложение получить ссылку на таблицу автоматически
-def handle_auto_schedule_request(chat_id, answer):
-    if answer.lower() == 'auto':
-        schedule_url = get_latest_schedule_link()
-        if schedule_url:
-            bot.sendMessage(chat_id, "Последняя таблица расписания: " + schedule_url)
-        else:
-            bot.sendMessage(chat_id, "Не удалось найти ссылку на последнюю таблицу расписания.")
+# Функция для обработки команды /check
+def on_check(chat_id):
+    website_url = "https://tcek63.ru/"
+    result = check_website(website_url)
+    bot.sendMessage(chat_id, result)
 
 # Функция для обработки неизвестных команд
 def on_unknown(chat_id):
@@ -81,8 +92,7 @@ def main():
     bot = telepot.Bot(TOKEN)
 
     # Регистрация обработчика сообщений
-    bot.message_loop({'chat': handle_message,
-                      'text': handle_auto_schedule_request})
+    bot.message_loop({'chat': handle_message})
 
     # Бот начинает работу
     print('Бот запущен. Для выхода нажмите Ctrl+C')
