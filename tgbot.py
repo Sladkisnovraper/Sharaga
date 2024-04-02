@@ -9,7 +9,7 @@ def get_schedule_link():
         url = "https://tcek63.ru/studentam/raspisanie-zanyatiy/"
         response = requests.get(url)
         soup = BeautifulSoup(response.content, "html.parser")
-        schedule_table = soup.find('div', class_='acc_body').find('table').find('tbody')
+        schedule_table = soup.find_all('div', class_='acc_body')[3].find('table').find('tbody')
         schedule_links = [a['href'] for a in schedule_table.find_all('a')]
         return schedule_links
     except Exception as e:
@@ -29,6 +29,11 @@ bot_token = '6594143932:AAEwYI8HxNfFPpCRqjEKz9RngAfcUvmnh8M'
 
 # Создание экземпляра бота
 bot = telebot.TeleBot(bot_token)
+
+# Обработчик команды /start
+@bot.message_handler(commands=['start'])
+def handle_start(message):
+    bot.send_message(message.chat.id, "Го чекнем че по расписанию?")
 
 # Обработчик команды /schedule
 @bot.message_handler(commands=['schedule'])
