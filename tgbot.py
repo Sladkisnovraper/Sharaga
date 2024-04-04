@@ -3,6 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 import telebot
 from telebot import types
+from selenium import webdriver
 
 # Функция для получения содержимого ссылок и самих ссылок на расписание
 def get_schedule_info():
@@ -18,12 +19,27 @@ def get_schedule_info():
         print(f"Ошибка при получении содержимого ссылок на расписание: {e}")
         return None, None
 
+# Функция для снятия скриншота страницы
+def take_screenshot(url):
+    options = webdriver.ChromeOptions()
+    options.add_argument('--headless')
+    options.add_argument('--disable-gpu')
+    options.add_argument('--no-sandbox')
+    driver = webdriver.Chrome(options=options)
+    driver.get(url)
+    screenshot_path = 'screenshot.png'
+    driver.save_screenshot(screenshot_path)
+    driver.quit()
+    return screenshot_path
+
 # Функция для отправки расписания пользователю в личные сообщения
 def send_schedule_to_user(bot, user_id, schedule_contents, schedule_links):
     if schedule_contents and schedule_links:
         for content, link in zip(schedule_contents, schedule_links):
+            screenshot_path = take_screenshot(link)
             message = f"Содержание расписания: {content}\nСсылка на таблицу: {link}"
             bot.send_message(user_id, message)
+            bot.send_photo(user_id, open(screenshot_path, 'rb'))
     else:
         bot.send_message(user_id, "Не удалось найти содержимое расписания или ссылки на таблицы.")
 
