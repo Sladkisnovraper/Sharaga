@@ -22,7 +22,7 @@ def get_schedule_info():
 def send_schedule_to_user(bot, user_id, schedule_contents, schedule_links):
     if schedule_contents and schedule_links:
         for content, link in zip(schedule_contents, schedule_links):
-            message = f"Содержание расписания: {content}\nСсылка на таблицу: {link}"
+            message = f"{content}\n {link}"
             bot.send_message(user_id, message)
     else:
         bot.send_message(user_id, "Не удалось найти содержимое расписания или ссылки на таблицы.")
@@ -40,7 +40,7 @@ def handle_start(message):
     keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
     button_start = types.KeyboardButton('Стартуем')
     keyboard.add(button_start)
-    bot.send_message(message.chat.id, "Привет! Нажми кнопку 'Стартуем', чтобы начать", reply_markup=keyboard)
+    bot.send_message(message.chat.id, "Копку Старт нажимай", reply_markup=keyboard)
 
 # Обработчик нажатия кнопки "Стартуем"
 @bot.message_handler(func=lambda message: message.text == 'Стартуем')
@@ -61,12 +61,12 @@ def handle_schedule_button(message):
     if schedule_contents and schedule_links:
         send_schedule_to_user(bot, message.from_user.id, schedule_contents, schedule_links)
         # Удаление кнопки "Го узнаем"
-        bot.send_message(message.chat.id, "Вот тебе расписание, если что, можешь нажать кнопку 'Стартуем', чтобы вернуться к началу.", reply_markup=types.ReplyKeyboardRemove())
+        bot.send_message(message.chat.id, "Вот тебе расписание", reply_markup=types.ReplyKeyboardRemove())
         # Создание клавиатуры с кнопкой "Стартуем"
         keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
         button_start = types.KeyboardButton('Стартуем')
         keyboard.add(button_start)
-        bot.send_message(message.chat.id, "Нажми кнопку 'Стартуем', чтобы начать заново", reply_markup=keyboard)
+        bot.send_message(message.chat.id, "Жми Старт что бы начать заново", reply_markup=keyboard)
     else:
         bot.send_message(message.from_user.id, "Ошибка: не удалось получить содержимое расписания или ссылки на таблицы.")
 
