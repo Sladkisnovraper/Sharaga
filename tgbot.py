@@ -21,7 +21,8 @@ def get_schedule_info():
 # Функция для отправки расписания пользователю в личные сообщения
 def send_schedule_to_user(bot, user_id, schedule_contents, schedule_links):
     if schedule_contents and schedule_links:
-        for content, link in zip(schedule_contents, schedule_links):
+        # Отправляем только последние 6 элементов
+        for content, link in zip(schedule_contents[-6:], schedule_links[-6:]):
             message = f"Содержание расписания: {content}\nСсылка на таблицу: {link}"
             bot.send_message(user_id, message)
     else:
@@ -77,3 +78,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
