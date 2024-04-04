@@ -62,17 +62,21 @@ def handle_schedule_button(message):
     # Получение содержимого ссылок и самих ссылок на расписание
     schedule_contents, schedule_links = get_schedule_info()
 
-    # Отправка содержимого расписания и ссылок на таблицы пользователю в личные сообщения
-    send_schedule_to_user(bot, message.from_user.id, schedule_contents, schedule_links)
+    # Проверка на наличие содержимого расписания и ссылок
+    if schedule_contents and schedule_links and len(schedule_contents) > 0 and len(schedule_links) > 0:
+        # Отправка содержимого расписания и ссылок на таблицы пользователю в личные сообщения
+        send_schedule_to_user(bot, message.from_user.id, schedule_contents, schedule_links)
 
-    # Удаление кнопки "Го узнаем"
-    bot.send_message(message.chat.id, "Вот тебе расписание, если что, можешь нажать кнопку 'Стартуем', чтобы вернуться к началу.", reply_markup=types.ReplyKeyboardRemove())
-    
-    # Создание клавиатуры с кнопкой "Стартуем"
-    keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-    button_start = types.KeyboardButton('Стартуем')
-    keyboard.add(button_start)
-    bot.send_message(message.chat.id, "Нажми кнопку 'Стартуем', чтобы начать заново", reply_markup=keyboard)
+        # Удаление кнопки "Го узнаем"
+        bot.send_message(message.chat.id, "Вот тебе расписание, если что, можешь нажать кнопку 'Стартуем', чтобы вернуться к началу.", reply_markup=types.ReplyKeyboardRemove())
+        
+        # Создание клавиатуры с кнопкой "Стартуем"
+        keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
+        button_start = types.KeyboardButton('Стартуем')
+        keyboard.add(button_start)
+        bot.send_message(message.chat.id, "Нажми кнопку 'Стартуем', чтобы начать заново", reply_markup=keyboard)
+    else:
+        bot.send_message(message.from_user.id, "Расписание пусто или не удалось получить информацию о расписании.")
 
 # Основная функция
 def main():
@@ -81,4 +85,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
+        
