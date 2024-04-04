@@ -21,10 +21,14 @@ def get_schedule_info():
 # Функция для отправки расписания пользователю в личные сообщения
 def send_schedule_to_user(bot, user_id, schedule_contents, schedule_links):
     if schedule_contents and schedule_links:
-        # Отправляем только последние 6 элементов
-        for content, link in zip(schedule_contents[-6:], schedule_links[-6:]):
-            message = f"Содержание расписания: {content}\nСсылка на таблицу: {link}"
-            bot.send_message(user_id, message)
+        # Проверяем, есть ли какие-либо данные в расписании
+        if len(schedule_contents) > 0 and len(schedule_links) > 0:
+            # Отправляем только последние 6 элементов
+            for content, link in zip(schedule_contents[-6:], schedule_links[-6:]):
+                message = f"Содержание расписания: {content}\nСсылка на таблицу: {link}"
+                bot.send_message(user_id, message)
+        else:
+            bot.send_message(user_id, "Расписание пусто.")
     else:
         bot.send_message(user_id, "Не удалось найти содержимое расписания или ссылки на таблицы.")
 
@@ -59,17 +63,16 @@ def handle_schedule_button(message):
     schedule_contents, schedule_links = get_schedule_info()
 
     # Отправка содержимого расписания и ссылок на таблицы пользователю в личные сообщения
-    if schedule_contents and schedule_links:
-        send_schedule_to_user(bot, message.from_user.id, schedule_contents, schedule_links)
-        # Удаление кнопки "Го узнаем"
-        bot.send_message(message.chat.id, "Вот тебе расписание, если что, можешь нажать кнопку 'Стартуем', чтобы вернуться к началу.", reply_markup=types.ReplyKeyboardRemove())
-        # Создание клавиатуры с кнопкой "Стартуем"
-        keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-        button_start = types.KeyboardButton('Стартуем')
-        keyboard.add(button_start)
-        bot.send_message(message.chat.id, "Нажми кнопку 'Стартуем', чтобы начать заново", reply_markup=keyboard)
-    else:
-        bot.send_message(message.from_user.id, "Ошибка: не удалось получить содержимое расписания или ссылки на таблицы.")
+    send_schedule_to_user(bot, message.from_user.id, schedule_contents, schedule_links)
+
+    # Удаление кнопки "Го узнаем"
+    bot.send_message(message.chat.id, "Вот тебе расписание, если что, можешь нажать кнопку 'Стартуем', чтобы вернуться к началу.", reply_markup=types.ReplyKeyboardRemove())
+    
+    # Создание клавиатуры с кнопкой "Стартуем"
+    keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
+    button_start = types.KeyboardButton('Стартуем')
+    keyboard.add(button_start)
+    bot.send_message(message.chat.id, "Нажми кнопку 'Стартуем', чтобы начать заново", reply_markup=keyboard)
 
 # Основная функция
 def main():
