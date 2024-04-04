@@ -28,7 +28,7 @@ def send_schedule_to_user(bot, user_id, schedule_contents, schedule_links):
         bot.send_message(user_id, "Не удалось найти содержимое расписания или ссылки на таблицы.")
 
 # Получение токена вашего бота
-bot_token = 'YOUR_BOT_TOKEN'
+bot_token = '6594143932:AAEwYI8HxNfFPpCRqjEKz9RngAfcUvmnh8M'
 
 # Создание экземпляра бота
 bot = telebot.TeleBot(bot_token)
