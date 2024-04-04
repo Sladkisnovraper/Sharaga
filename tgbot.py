@@ -36,9 +36,8 @@ def send_schedule_to_user(bot, user_id, schedule_contents, schedule_links):
         for content, link in zip(schedule_contents, schedule_links):
             screenshot = take_screenshot(link)
             if screenshot:
-                # Отправляем содержимое и скриншот таблицы пользователю
-                bot.send_message(user_id, f"Содержание расписания: {content}\nСсылка на таблицу: {link}")
-                bot.send_photo(user_id, screenshot)
+                # Отправляем скриншот как документ
+                bot.send_document(user_id, screenshot, caption=f"Содержание расписания: {content}\nСсылка на таблицу: {link}")
             else:
                 bot.send_message(user_id, "Не удалось создать скриншот страницы.")
     else:
