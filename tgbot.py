@@ -2,7 +2,7 @@ import logging
 import requests
 import telebot
 from bs4 import BeautifulSoup
-import subprocess
+from io import BytesIO
 
 # Функция для получения содержимого ссылок и самих ссылок на расписание
 def get_schedule_info():
@@ -18,12 +18,15 @@ def get_schedule_info():
         print(f"Ошибка при получении содержимого ссылок на расписание: {e}")
         return None, None
 
-# Функция для создания скриншота страницы с использованием w3m
+# Функция для создания скриншота страницы
 def take_screenshot(url):
     try:
-        subprocess.run(["w3m", "-dump", "-o", "ext_image_viewer=1", "-o", f"imgdisplay_path=~/storage/shared/screenshot.png", url], check=True)
-        return "~/storage/shared/screenshot.png"
-    except subprocess.CalledProcessError as e:
+        # Получаем скриншот страницы
+        response = requests.get(url)
+        img = BytesIO(response.content)
+        img.name = 'screenshot.png'
+        return img
+    except Exception as e:
         print(f"Ошибка при создании скриншота страницы: {e}")
         return None
 
@@ -31,11 +34,11 @@ def take_screenshot(url):
 def send_schedule_to_user(bot, user_id, schedule_contents, schedule_links):
     if schedule_contents and schedule_links:
         for content, link in zip(schedule_contents, schedule_links):
-            screenshot_path = take_screenshot(link)
-            if screenshot_path:
-                message = f"Содержание расписания: {content}\nСсылка на таблицу: {link}"
-                bot.send_message(user_id, message)
-                bot.send_photo(user_id, open(screenshot_path, 'rb'))
+            screenshot = take_screenshot(link)
+            if screenshot:
+                # Отправляем содержимое и скриншот таблицы пользователю
+                bot.send_message(user_id, f"Содержание расписания: {content}\nСсылка на таблицу: {link}")
+                bot.send_photo(user_id, screenshot)
             else:
                 bot.send_message(user_id, "Не удалось создать скриншот страницы.")
     else:
@@ -51,8 +54,8 @@ bot = telebot.TeleBot(bot_token)
 @bot.message_handler(commands=['start'])
 def handle_start(message):
     # Создание клавиатуры
-    keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-    button_start = types.KeyboardButton('Стартуем')
+    keyboard = telebot.types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
+    button_start = telebot.types.KeyboardButton('Стартуем')
     keyboard.add(button_start)
     bot.send_message(message.chat.id, "Привет! Нажми кнопку 'Стартуем', чтобы начать", reply_markup=keyboard)
 
@@ -60,8 +63,8 @@ def handle_start(message):
 @bot.message_handler(func=lambda message: message.text == 'Стартуем')
 def handle_start_button(message):
     # Создание клавиатуры с кнопкой "Го узнаем"
-    keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-    button_schedule = types.KeyboardButton('Го узнаем')
+    keyboard = telebot.types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
+    button_schedule = telebot.types.KeyboardButton('Го узнаем')
     keyboard.add(button_schedule)
     bot.send_message(message.chat.id, "Че там по расписанию?", reply_markup=keyboard)
 
@@ -75,10 +78,10 @@ def handle_schedule_button(message):
     if schedule_contents and schedule_links:
         send_schedule_to_user(bot, message.from_user.id, schedule_contents, schedule_links)
         # Удаление кнопки "Го узнаем"
-        bot.send_message(message.chat.id, "Вот тебе расписание, если что, можешь нажать кнопку 'Стартуем', чтобы вернуться к началу.", reply_markup=types.ReplyKeyboardRemove())
+        bot.send_message(message.chat.id, "Вот тебе расписание, если что, можешь нажать кнопку 'Стартуем', чтобы вернуться к началу.", reply_markup=telebot.types.ReplyKeyboardRemove())
         # Создание клавиатуры с кнопкой "Стартуем"
-        keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-        button_start = types.KeyboardButton('Стартуем')
+        keyboard = telebot.types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
+        button_start = telebot.types.KeyboardButton('Стартуем')
         keyboard.add(button_start)
         bot.send_message(message.chat.id, "Нажми кнопку 'Стартуем', чтобы начать заново", reply_markup=keyboard)
     else:
