@@ -10,21 +10,25 @@ def get_google_sheet_data(sheet_url):
         response = requests.get(sheet_url)
         soup = BeautifulSoup(response.content, "html.parser")
         # Находим ячейки G25-G34
-        cells = soup.find_all('div', {'class': 'grid-table-container'})[0].find_all('div', {'class': 'cell'})[24:34]
-        cell_contents = [cell.text for cell in cells]
-        return cell_contents
+        cells = soup.find_all('div', {'class': 'grid-table-container'})[0].find_all('div', {'class': 'cell'})
+        cell_contents = []
+        indices = [25, 26, 26, 27, 28, 29, 30, 31, 32, 33]  # Индексы ячеек G25-G34
+        for index in indices:
+            cell_content = cells[index].text.strip()  # Получаем текст ячейки и удаляем лишние пробелы
+            cell_contents.append(cell_content)
+        return cell_contents, sheet_url  # Возвращаем содержимое ячеек и ссылку на таблицу
     except Exception as e:
         print(f"Ошибка при получении данных из Google таблицы: {e}")
-        return None
+        return None, None
 
 # Функция для отправки расписания пользователю в личные сообщения
 def send_schedule_to_user(bot, user_id, schedule_contents, schedule_links):
     if schedule_contents and schedule_links:
         for content, link in zip(schedule_contents, schedule_links):
             # Получение содержимого указанных ячеек Google таблицы для каждой ссылки
-            google_sheet_data = get_google_sheet_data(link)
+            google_sheet_data, sheet_url = get_google_sheet_data(link)
             
-            message = f"Содержание расписания: {content}\nСсылка на таблицу: {link}\n\n"
+            message = f"Содержание расписания: {content}\nСсылка на таблицу: {sheet_url}\n\n"
             if google_sheet_data:
                 message += "Содержимое ячеек G25-G34:\n"
                 message += "\n".join(google_sheet_data)
@@ -73,7 +77,7 @@ def handle_start_button(message):
 # Обработчик нажатия кнопки "Го узнаем"
 @bot.message_handler(func=lambda message: message.text == 'Го узнаем')
 def handle_schedule_button(message):
-    # Получение ссылок на расписание
+    # Получение содержимого и ссылок на расписание
     schedule_contents, schedule_links = get_schedule_info()
 
     # Отправка содержимого расписания и ссылок на таблицы пользователю в личные сообщения
