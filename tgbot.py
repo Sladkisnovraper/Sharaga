@@ -18,9 +18,12 @@ def get_google_sheet_data(sheet_url):
         return None
 
 # Функция для отправки расписания пользователю в личные сообщения
-def send_schedule_to_user(bot, user_id, schedule_contents, schedule_links, google_sheet_data):
+def send_schedule_to_user(bot, user_id, schedule_contents, schedule_links):
     if schedule_contents and schedule_links:
         for content, link in zip(schedule_contents, schedule_links):
+            # Получение содержимого указанных ячеек Google таблицы для каждой ссылки
+            google_sheet_data = get_google_sheet_data(link)
+            
             message = f"Содержание расписания: {content}\nСсылка на таблицу: {link}\n\n"
             if google_sheet_data:
                 message += "Содержимое ячеек G25-G34:\n"
@@ -73,11 +76,8 @@ def handle_schedule_button(message):
     # Получение ссылок на расписание
     schedule_contents, schedule_links = get_schedule_info()
 
-    # Получение содержимого указанных ячеек Google таблицы
-    google_sheet_data = get_google_sheet_data(schedule_links[0])  # Предполагаем, что ссылка на таблицу - первая в списке
-
     # Отправка содержимого расписания и ссылок на таблицы пользователю в личные сообщения
-    send_schedule_to_user(bot, message.from_user.id, schedule_contents, schedule_links, google_sheet_data)
+    send_schedule_to_user(bot, message.from_user.id, schedule_contents, schedule_links)
 
     # Удаление кнопки "Го узнаем"
     bot.send_message(message.chat.id, "Вот тебе расписание, если что, можешь нажать кнопку 'Стартуем', чтобы вернуться к началу.", reply_markup=types.ReplyKeyboardRemove())
