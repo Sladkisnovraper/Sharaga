@@ -1,4 +1,3 @@
-import logging
 import subprocess
 from bs4 import BeautifulSoup
 import telebot
@@ -41,9 +40,9 @@ def main():
     def handle_start(message):
         # Создание клавиатуры
         keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-        button_start = types.KeyboardButton('Стартуем')
-        keyboard.add(button_start)
-        bot.send_message(message.chat.id, "Привет! Нажми кнопку 'Стартуем', чтобы начать", reply_markup=keyboard)
+        button_schedule = types.KeyboardButton('Стартуем')
+        keyboard.add(button_schedule)
+        bot.send_message(message.chat.id, "Че там по расписанию?", reply_markup=keyboard)
 
     # Обработчик нажатия кнопки "Го узнаем"
     @bot.message_handler(func=lambda message: message.text == 'Го узнаем')
@@ -65,7 +64,6 @@ def main():
             keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
             button_start = types.KeyboardButton('Стартуем')
             keyboard.add(button_start)
-            bot.send_message(message.chat.id, "Нажми кнопку 'Стартуем', чтобы начать заново", reply_markup=keyboard)
         else:
             bot.send_message(message.from_user.id, "Ошибка: не удалось получить содержимое расписания или ссылки на таблицы.")
 
