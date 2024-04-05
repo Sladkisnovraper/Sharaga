@@ -40,24 +40,6 @@ def send_schedule_to_user(bot, user_id, schedule_contents, schedule_links):
         bot.send_message(user_id, "Не удалось найти содержимое расписания или ссылки на таблицы.")
         logging.warning("Не удалось найти содержимое расписания или ссылки на таблицы.")
 
-# Функция для поиска даты и дня недели в содержании расписания
-def find_date_and_day(content):
-    date = None
-    day = None
-    # Поиск даты в формате "дд.мм.гггг"
-    if any(char.isdigit() for char in content):
-        date_parts = content.split()
-        for part in date_parts:
-            if '.' in part and len(part) == 10:  # Проверка на формат даты
-                date = part
-                break
-    # Поиск дня недели
-    if '(' in content and ')' in content:
-        day_start = content.find('(') + 1
-        day_end = content.find(')')
-        day = content[day_start:day_end]
-    return date, day
-
 # Получение токена вашего бота
 bot_token = '6594143932:AAEwYI8HxNfFPpCRqjEKz9RngAfcUvmnh8M'
 
@@ -67,32 +49,20 @@ bot = telebot.TeleBot(bot_token)
 # Обработчик команды /start
 @bot.message_handler(commands=['start'])
 def handle_start(message):
-    # Удаление всех кнопок и создание кнопки "Стартуем"
-    keyboard = types.ReplyKeyboardRemove()
-    button_start = types.KeyboardButton("Стартуем")
+    # Создание клавиатуры
     keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
+    button_start = types.KeyboardButton('Стартуем')
     keyboard.add(button_start)
-    bot.send_message(message.chat.id, "Че там по расписанию?", reply_markup=keyboard)
-    logging.info(f"Отправлена клавиатура с кнопкой 'Стартуем' пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
+    bot.send_message(message.chat.id, "Кнопку 'Старт' нажимай", reply_markup=keyboard)
+    logging.info(f"Отправлена клавиатура пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
 
-# Обработчик кнопки "Стартуем"
+# Обработчик нажатия кнопки "Стартуем"
 @bot.message_handler(func=lambda message: message.text == 'Стартуем')
 def handle_start_button(message):
-    # Создание кнопки "Го узнаем" после нажатия кнопки "Стартуем"
-    keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-    button_go_learn = types.KeyboardButton("Го узнаем")
-    keyboard.add(button_go_learn)
-    bot.send_message(message.chat.id, "Че там по расписанию?", reply_markup=keyboard)
-    logging.info(f"Отправлена клавиатура с кнопкой 'Го узнаем' пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
-
-# Обработчик кнопки "Го узнаем"
-@bot.message_handler(func=lambda message: message.text == 'Го узнаем')
-def handle_go_learn_button(message):
     # Получение содержимого расписания и ссылок
-    global schedule_contents, schedule_links  # Объявляем глобальные переменные
-    schedule_contents, schedule_links = get_schedule_info()  # Обновляем содержимое расписания и ссылки
+    schedule_contents, schedule_links = get_schedule_info()
     if schedule_contents and schedule_links:
-        # Создание клавиатуры с днями недели
+        # Создание клавиатуры с кнопками содержания расписания
         keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
         unique_days = set()  # Множество для хранения уникальных дней недели
         for content in schedule_contents:
@@ -100,33 +70,60 @@ def handle_go_learn_button(message):
             date_day = find_date_and_day(content)
             if date_day:
                 date, day = date_day
-                if day is not None:  # Проверка наличия дня недели
-                    unique_days.add(day)  # Добавление уникального дня недели в множество
-                    keyboard.add(types.KeyboardButton(f"{date} ({day})"))
+                unique_days.add(day)  # Добавление уникального дня недели в множество
+                keyboard.add(day)
+        # Удаление кнопки "Без описания", если она есть
+        keyboard = remove_button_without_description(keyboard)
         # Добавление кнопки "Назад"
         button_back = types.KeyboardButton("Назад")
         keyboard.add(button_back)
-        # Добавление кнопки "Скинь все"
-        button_send_all = types.KeyboardButton("Скинь все")
-        keyboard.add(button_send_all)
         bot.send_message(message.chat.id, "На какой день?", reply_markup=keyboard)
         logging.info(f"Отправлена клавиатура с кнопками содержания расписания пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
     else:
         bot.send_message(message.chat.id, "Ошибка: не удалось получить содержимое расписания или ссылки на таблицы.")
         logging.warning("Ошибка при получении содержимого расписания или ссылок на таблицы.")
 
-# Обработчик нажатия кнопок с днями недели
-@bot.message_handler(func=lambda message: any(message.text.startswith(day) for day in ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"]))
+# Функция для поиска даты и дня недели в содержании расписания
+def find_date_and_day(content):
+    date = None
+    day = None
+    # Поиск даты в формате "дд.мм.гггг"
+    if any(char.isdigit() for char in content):
+        date_parts = content.split()
+        for part in date_parts:
+            if '.' in part and len(part) == 10:  # Проверка на формат "дд.мм.гггг"
+                date = part
+                break
+    # Поиск дня недели в скобках
+    if '(' in content and ')' in content:
+        start_index = content.find('(') + 1
+        end_index = content.find(')')
+        day = content[start_index:end_index]
+    return date, day
+
+# Функция для удаления кнопки "Без описания", если она есть
+def remove_button_without_description(keyboard):
+    new_keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
+    for button in keyboard.keyboard:
+        for key in button:
+            if key != "Без описания":
+                new_keyboard.add(key)
+    return new_keyboard
+
+# Обработчик нажатия кнопок содержания расписания
+@bot.message_handler(func=lambda message: message.text in ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница"])
 def handle_day_button(message):
-    chosen_day = message.text
-    global schedule_contents, schedule_links  # Объявляем глобальные переменные
-    schedule_contents, schedule_links = get_schedule_info()  # Обновляем содержимое расписания и ссылки
+    # Получение содержимого расписания и ссылок
+    schedule_contents, schedule_links = get_schedule_info()
     if schedule_contents and schedule_links:
+        chosen_day = message.text
+        # Поиск содержания расписания и ссылок для выбранного дня
         day_schedule_contents = []
         day_schedule_links = []
         for content, link in zip(schedule_contents, schedule_links):
+            # Поиск даты и дня недели в содержании расписания
             date_day = find_date_and_day(content)
-            if date_day and date_day[1] in chosen_day:
+            if date_day and date_day[1] == chosen_day:
                 day_schedule_contents.append(content)
                 day_schedule_links.append(link)
         # Отправка расписания на выбранный день
@@ -135,28 +132,20 @@ def handle_day_button(message):
         bot.send_message(message.chat.id, "Ошибка: не удалось получить содержимое расписания или ссылки на таблицы.")
         logging.warning("Ошибка при получении содержимого расписания или ссылок на таблицы.")
 
-# Обработчик кнопки "Назад"
+# Обработчик нажатия кнопки "Назад"
 @bot.message_handler(func=lambda message: message.text == 'Назад')
 def handle_back_button(message):
-    # Удаление кнопки "Назад" и создание кнопки "Стартуем"
+    # Удаление всех кнопок кроме кнопки "Стартуем"
     keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-    button_start = types.KeyboardButton("Стартуем")
+    button_start = types.KeyboardButton('Стартуем')
     keyboard.add(button_start)
-    bot.send_message(message.chat.id, "Нажимай 'Стартуем', чтобы получить расписание", reply_markup=keyboard)
-    logging.info(f"Отправлено сообщение 'Нажимай Старт чтобы получить расписание' пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
+    bot.send_message(message.chat.id, "Нажмите 'Стартуем', чтобы начать заново.", reply_markup=keyboard)
+    logging.info(f"Отправлена клавиатура с кнопкой 'Стартуем' пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
 
-# Обработчик кнопки "Скинь все"
-@bot.message_handler(func=lambda message: message.text == 'Скинь все')
-def handle_send_all_button(message):
-    # Отправка всех расписаний с ссылками на таблицы
-    send_schedule_to_user(bot, message.chat.id, schedule_contents, schedule_links)
-
-# Запуск бота
+# Основная функция
 def main():
-    global schedule_contents, schedule_links
-    schedule_contents, schedule_links = get_schedule_info()  # Получение содержимого расписания и ссылок
-    logging.info("Запуск бота...")
-    bot.polling(none_stop=True)
+    # Запуск бота
+    bot.polling()
 
 if __name__ == "__main__":
     main()
