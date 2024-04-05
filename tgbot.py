@@ -59,6 +59,9 @@ def handle_schedule_button(message):
     days = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница"]
     buttons = [types.KeyboardButton(day) for day in days]
     keyboard.add(*buttons)
+    # Добавление кнопок "Скинуть все" и "Назад"
+    button_reset = types.KeyboardButton("Скинуть все")
+    keyboard.add(button_reset)
     bot.send_message(message.chat.id, "На какой день?", reply_markup=keyboard)
 
 # Обработчик нажатия кнопок дней недели
@@ -72,6 +75,17 @@ def handle_day_button(message):
         day_schedule_contents = [content for content, link in zip(schedule_contents, schedule_links) if day in content]
         day_schedule_links = [link for content, link in zip(schedule_contents, schedule_links) if day in content]
         send_schedule_to_user(bot, message.chat.id, day_schedule_contents, day_schedule_links)
+    else:
+        bot.send_message(message.chat.id, "Ошибка: не удалось получить содержимое расписания или ссылки на таблицы.")
+
+# Обработчик нажатия кнопки "Скинуть все"
+@bot.message_handler(func=lambda message: message.text == 'Скинуть все')
+def handle_reset_button(message):
+    # Получение содержимого расписания и ссылок
+    schedule_contents, schedule_links = get_schedule_info()
+    # Отправка всего расписания
+    if schedule_contents and schedule_links:
+        send_schedule_to_user(bot, message.chat.id, schedule_contents, schedule_links)
     else:
         bot.send_message(message.chat.id, "Ошибка: не удалось получить содержимое расписания или ссылки на таблицы.")
 
