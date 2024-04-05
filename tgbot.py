@@ -3,6 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 import telebot
 from telebot import types
+import time
 
 # Установка уровня логгирования для отображения отладочных сообщений в терминале
 logging.basicConfig(level=logging.INFO)
@@ -40,11 +41,24 @@ def send_schedule_to_user(bot, user_id, schedule_contents, schedule_links):
         bot.send_message(user_id, "Не удалось найти содержимое расписания или ссылки на таблицы.")
         logging.warning("Не удалось найти содержимое расписания или ссылки на таблицы.")
 
+# Функция для проверки времени бездействия пользователя
+def check_user_activity(last_activity_time):
+    current_time = time.time()
+    inactive_time = current_time - last_activity_time
+    return inactive_time
+
+# Функция для отправки сообщения о времени до отключения
+def send_time_remaining_message(chat_id, remaining_time):
+    bot.send_message(chat_id, f"До отключения бота осталось {int(remaining_time)} секунд.")
+
 # Получение токена вашего бота
 bot_token = '6594143932:AAEwYI8HxNfFPpCRqjEKz9RngAfcUvmnh8M'
 
 # Создание экземпляра бота
 bot = telebot.TeleBot(bot_token)
+
+# Словарь для хранения времени последнего активного взаимодействия пользователя
+last_activity = {}
 
 # Обработчик команды /start
 @bot.message_handler(commands=['start'])
@@ -55,6 +69,8 @@ def handle_start(message):
     keyboard.add(button_start)
     bot.send_message(message.chat.id, "Кнопку 'Старт' нажимай", reply_markup=keyboard)
     logging.info(f"Отправлена клавиатура пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
+    # Сохранение времени активности пользователя
+    last_activity[message.chat.id] = time.time()
 
 # Обработчик нажатия кнопки "Стартуем"
 @bot.message_handler(func=lambda message: message.text == 'Стартуем')
@@ -65,6 +81,8 @@ def handle_start_button(message):
     keyboard.add(button_schedule)
     bot.send_message(message.chat.id, "Че там по расписанию?", reply_markup=keyboard)
     logging.info(f"Отправлена клавиатура с кнопкой 'Го узнаем' пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
+    # Сохранение времени активности пользователя
+    last_activity[message.chat.id] = time.time()
 
 # Обработчик нажатия кнопки "Го узнаем"
 @bot.message_handler(func=lambda message: message.text == 'Го узнаем')
@@ -80,6 +98,8 @@ def handle_schedule_button(message):
     keyboard.add(button_reset, button_back)
     bot.send_message(message.chat.id, "На какой день?", reply_markup=keyboard)
     logging.info(f"Отправлена клавиатура с кнопками дней недели пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
+    # Сохранение времени активности пользователя
+    last_activity[message.chat.id] = time.time()
 
 # Обработчик нажатия кнопок дней недели
 @bot.message_handler(func=lambda message: message.text in ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница"])
@@ -95,6 +115,8 @@ def handle_day_button(message):
     else:
         bot.send_message(message.chat.id, "Ошибка: не удалось получить содержимое расписания или ссылки на таблицы.")
         logging.warning("Ошибка при получении содержимого расписания или ссылок на таблицы.")
+    # Сохранение времени активности пользователя
+    last_activity[message.chat.id] = time.time()
 
 # Обработчик нажатия кнопки "Скинуть все"
 @bot.message_handler(func=lambda message: message.text == 'Скинуть все')
@@ -116,6 +138,8 @@ def handle_reset_button(message):
     else:
         bot.send_message(message.chat.id, "Ошибка: не удалось получить содержимое расписания или ссылки на таблицы.")
         logging.warning("Ошибка при получении содержимого расписания или ссылок на таблицы.")
+    # Сохранение времени активности пользователя
+    last_activity[message.chat.id] = time.time()
 
 # Обработчик нажатия кнопки "Назад"
 @bot.message_handler(func=lambda message: message.text == 'Назад')
@@ -126,11 +150,43 @@ def handle_back_button(message):
     keyboard.add(button_start)
     bot.send_message(message.chat.id, "Нажмите 'Стартуем', чтобы начать заново.", reply_markup=keyboard)
     logging.info(f"Отправлена клавиатура с кнопкой 'Стартуем' пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
+    # Сохранение времени активности пользователя
+    last_activity[message.chat.id] = time.time()
+
+# Обработчик сообщений для отслеживания бездействия пользователя
+@bot.message_handler(func=lambda message: True)
+def handle_messages(message):
+    if message.chat.id in last_activity:
+        inactive_time = check_user_activity(last_activity[message.chat.id])
+        logging.info(f"Пользователь {get_user_profile_link(message.chat.id, message.from_user.username)} бездействует уже {inactive_time} секунд.")
+        if inactive_time > 600:  # 10 минут бездействия
+            bot.send_message(message.chat.id, "Вы были неактивны слишком долго. Пожалуйста, нажмите 'Стартуем', чтобы начать заново.")
+            logging.info(f"Пользователь {get_user_profile_link(message.chat.id, message.from_user.username)} был отключен из-за длительного бездействия.")
+            del last_activity[message.chat.id]  # Удаление времени последнего активного взаимодействия
+    else:
+        logging.warning(f"Нет данных о последнем активном времени пользователя {get_user_profile_link(message.chat.id, message.from_user.username)}.")
+
+# Функция для проверки времени бездействия пользователя и отправки сообщения о времени до отключения
+def check_inactive_users():
+    while True:
+        for chat_id, last_activity_time in last_activity.items():
+            inactive_time = check_user_activity(last_activity_time)
+            if inactive_time > 600:  # 10 минут бездействия
+                bot.send_message(chat_id, "Вы были неактивны слишком долго. Пожалуйста, нажмите 'Стартуем', чтобы начать заново.")
+                logging.info(f"Пользователь {get_user_profile_link(chat_id, None)} был отключен из-за длительного бездействия.")
+                del last_activity[chat_id]  # Удаление времени последнего активного взаимодействия
+            else:
+                remaining_time = 600 - inactive_time
+                logging.info(f"До отключения пользователя {get_user_profile_link(chat_id, None)} осталось {int(remaining_time)} секунд.")
+        time.sleep(20)  # Проверяем каждые 20 секунд
 
 # Основная функция
 def main():
     # Запуск бота
     bot.polling()
+
+    # Запуск функции для проверки времени бездействия пользователя
+    check_inactive_users()
 
 if __name__ == "__main__":
     main()
