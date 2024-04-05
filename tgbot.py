@@ -154,6 +154,8 @@ def handle_back_button(message):
 
 # Запуск бота
 def main():
+    global schedule_contents, schedule_links
+    schedule_contents, schedule_links = get_schedule_info()  # Получение содержимого расписания и ссылок
     logging.info("Запуск бота...")
     bot.polling(none_stop=True)
 
