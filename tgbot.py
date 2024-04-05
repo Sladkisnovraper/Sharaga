@@ -106,7 +106,7 @@ def remove_button_without_description(keyboard):
     new_keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
     for button in keyboard.keyboard:
         for key in button:
-            if key.text != "Без описания":
+            if key != "Без описания":
                 new_keyboard.add(key)
     return new_keyboard
 
