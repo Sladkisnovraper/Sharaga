@@ -66,16 +66,14 @@ def handle_start_button(message):
         keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
         unique_days = set()  # Множество для хранения уникальных дней недели
         for content in schedule_contents:
-            # Проверка наличия подстроки ' ('
-            if ' (' in content:
-                date, day = content.split(' (', 1)
-                unique_days.add(day[:-1])  # Добавление уникального дня недели в множество
-                keyboard.add(types.KeyboardButton(day[:-1]))
-            else:
-                date = content  # В качестве дня указываем что-то по умолчанию
-                day = "Без описания"
-                unique_days.add(day)
+            # Поиск даты и дня недели в содержании расписания
+            date_day = find_date_and_day(content)
+            if date_day:
+                date, day = date_day
+                unique_days.add(day)  # Добавление уникального дня недели в множество
                 keyboard.add(types.KeyboardButton(day))
+        # Удаление кнопки "Без описания", если она есть
+        keyboard = remove_button_without_description(keyboard)
         # Добавление кнопки "Назад"
         button_back = types.KeyboardButton("Назад")
         keyboard.add(button_back)
@@ -84,6 +82,33 @@ def handle_start_button(message):
     else:
         bot.send_message(message.chat.id, "Ошибка: не удалось получить содержимое расписания или ссылки на таблицы.")
         logging.warning("Ошибка при получении содержимого расписания или ссылок на таблицы.")
+
+# Функция для поиска даты и дня недели в содержании расписания
+def find_date_and_day(content):
+    date = None
+    day = None
+    # Поиск даты в формате "дд.мм.гггг"
+    if any(char.isdigit() for char in content):
+        date_parts = content.split()
+        for part in date_parts:
+            if '.' in part and len(part) == 10:  # Проверка на формат "дд.мм.гггг"
+                date = part
+                break
+    # Поиск дня недели в скобках
+    if '(' in content and ')' in content:
+        start_index = content.find('(') + 1
+        end_index = content.find(')')
+        day = content[start_index:end_index]
+    return date, day
+
+# Функция для удаления кнопки "Без описания", если она есть
+def remove_button_without_description(keyboard):
+    new_keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
+    for button in keyboard.keyboard:
+        for key in button:
+            if key.text != "Без описания":
+                new_keyboard.add(key)
+    return new_keyboard
 
 # Обработчик нажатия кнопок содержания расписания
 @bot.message_handler(func=lambda message: message.text in ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница"])
@@ -96,12 +121,11 @@ def handle_day_button(message):
         day_schedule_contents = []
         day_schedule_links = []
         for content, link in zip(schedule_contents, schedule_links):
-            # Проверка наличия подстроки ' ('
-            if ' (' in content:
-                date, day = content.split(' (', 1)
-                if day[:-1] == chosen_day:
-                    day_schedule_contents.append(content)
-                    day_schedule_links.append(link)
+            # Поиск даты и дня недели в содержании расписания
+            date_day = find_date_and_day(content)
+            if date_day and date_day[1] == chosen_day:
+                day_schedule_contents.append(content)
+                day_schedule_links.append(link)
         # Отправка расписания на выбранный день
         send_schedule_to_user(bot, message.chat.id, day_schedule_contents, day_schedule_links)
     else:
