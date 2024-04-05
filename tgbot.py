@@ -49,11 +49,21 @@ bot = telebot.TeleBot(bot_token)
 # Обработчик команды /start
 @bot.message_handler(commands=['start'])
 def handle_start(message):
-    global unique_days
+    # Удаление кнопки "Стартуем" и создание кнопки "Го узнаем"
+    keyboard = types.ReplyKeyboardRemove()
+    button_go_learn = types.KeyboardButton("Го узнаем")
+    keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
+    keyboard.add(button_go_learn)
+    bot.send_message(message.chat.id, "Че там по расписанию?", reply_markup=keyboard)
+    logging.info(f"Отправлена клавиатура с кнопкой 'Го узнаем' пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
+
+# Обработчик кнопки "Го узнаем"
+@bot.message_handler(func=lambda message: message.text == 'Го узнаем')
+def handle_go_learn_button(message):
     # Получение содержимого расписания и ссылок
     schedule_contents, schedule_links = get_schedule_info()
     if schedule_contents and schedule_links:
-        # Создание клавиатуры
+        # Создание клавиатуры с днями недели
         keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
         unique_days = set()  # Множество для хранения уникальных дней недели
         for content in schedule_contents:
@@ -63,7 +73,7 @@ def handle_start(message):
                 date, day = date_day
                 if day is not None:  # Проверка наличия дня недели
                     unique_days.add(day)  # Добавление уникального дня недели в множество
-                    keyboard.add(day)
+                    keyboard.add(types.KeyboardButton(f"{date} ({day})"))
         # Добавление кнопки "Назад"
         button_back = types.KeyboardButton("Назад")
         keyboard.add(button_back)
@@ -92,7 +102,7 @@ def find_date_and_day(content):
     return date, day
 
 # Обработчик нажатия кнопок содержания расписания
-@bot.message_handler(func=lambda message: message.text in unique_days)
+@bot.message_handler(func=lambda message: any(message.text.startswith(day) for day in ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"]))
 def handle_day_button(message):
     chosen_day = message.text
     # Получение содержимого расписания и ссылок
@@ -102,7 +112,7 @@ def handle_day_button(message):
         day_schedule_links = []
         for content, link in zip(schedule_contents, schedule_links):
             date_day = find_date_and_day(content)
-            if date_day and date_day[1] == chosen_day:
+            if date_day and date_day[1] in chosen_day:
                 day_schedule_contents.append(content)
                 day_schedule_links.append(link)
         # Отправка расписания на выбранный день
@@ -111,20 +121,21 @@ def handle_day_button(message):
         bot.send_message(message.chat.id, "Ошибка: не удалось получить содержимое расписания или ссылки на таблицы.")
         logging.warning("Ошибка при получении содержимого расписания или ссылок на таблицы.")
 
-# Обработчик нажатия кнопки "Назад"
+# Обработчик кнопки "Назад"
 @bot.message_handler(func=lambda message: message.text == 'Назад')
 def handle_back_button(message):
-    # Удаление всех кнопок кроме кнопки "Стартуем"
+    # Удаление всех кнопок и отправка клавиатуры с кнопкой "Го узнаем"
+    keyboard = types.ReplyKeyboardRemove()
+    button_go_learn = types.KeyboardButton("Го узнаем")
     keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-    button_start = types.KeyboardButton('Стартуем')
-    keyboard.add(button_start)
-    bot.send_message(message.chat.id, "Нажмите 'Стартуем', чтобы начать заново.", reply_markup=keyboard)
-    logging.info(f"Отправлена клавиатура с кнопкой 'Стартуем' пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
+    keyboard.add(button_go_learn)
+    bot.send_message(message.chat.id, "Че там по расписанию?", reply_markup=keyboard)
+    logging.info(f"Отправлена клавиатура с кнопкой 'Го узнаем' пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
 
-# Основная функция
+# Запуск бота
 def main():
-    # Запуск бота
-    bot.polling()
+    logging.info("Запуск бота...")
+    bot.polling(none_stop=True)
 
 if __name__ == "__main__":
     main()
