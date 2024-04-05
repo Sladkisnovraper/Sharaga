@@ -134,13 +134,10 @@ def handle_day_button(message):
 # Обработчик кнопки "Назад"
 @bot.message_handler(func=lambda message: message.text == 'Назад')
 def handle_back_button(message):
-    # Удаление всех кнопок и отправка клавиатуры с кнопкой "Стартуем"
+    # Удаление всех кнопок и отправка сообщения "Нажимай Старт чтобы получить расписание"
     keyboard = types.ReplyKeyboardRemove()
-    button_start = types.KeyboardButton("Стартуем")
-    keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-    keyboard.add(button_start)
-    bot.send_message(message.chat.id, "Че там по расписанию?", reply_markup=keyboard)
-    logging.info(f"Отправлена клавиатура с кнопкой 'Стартуем' пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
+    bot.send_message(message.chat.id, "Нажимай Старт чтобы получить расписание", reply_markup=keyboard)
+    logging.info(f"Отправлено сообщение 'Нажимай Старт чтобы получить расписание' пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
 
 # Запуск бота
 def main():
