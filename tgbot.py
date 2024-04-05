@@ -66,11 +66,16 @@ def handle_start_button(message):
         keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
         unique_days = set()  # Множество для хранения уникальных дней недели
         for content in schedule_contents:
-            # Получение сокращенного содержания расписания
-            date, day = content.split(' (', 1)
-            if day[:-1] not in unique_days:
+            # Проверка наличия подстроки ' ('
+            if ' (' in content:
+                date, day = content.split(' (', 1)
                 unique_days.add(day[:-1])  # Добавление уникального дня недели в множество
                 keyboard.add(types.KeyboardButton(day[:-1]))
+            else:
+                date = content  # В качестве дня указываем что-то по умолчанию
+                day = "Без описания"
+                unique_days.add(day)
+                keyboard.add(types.KeyboardButton(day))
         # Добавление кнопки "Назад"
         button_back = types.KeyboardButton("Назад")
         keyboard.add(button_back)
@@ -91,10 +96,12 @@ def handle_day_button(message):
         day_schedule_contents = []
         day_schedule_links = []
         for content, link in zip(schedule_contents, schedule_links):
-            date, day = content.split(' (', 1)
-            if day[:-1] == chosen_day:
-                day_schedule_contents.append(content)
-                day_schedule_links.append(link)
+            # Проверка наличия подстроки ' ('
+            if ' (' in content:
+                date, day = content.split(' (', 1)
+                if day[:-1] == chosen_day:
+                    day_schedule_contents.append(content)
+                    day_schedule_links.append(link)
         # Отправка расписания на выбранный день
         send_schedule_to_user(bot, message.chat.id, day_schedule_contents, day_schedule_links)
     else:
