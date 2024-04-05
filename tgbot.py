@@ -115,6 +115,14 @@ def find_date_and_day(content):
     return date, day
 
 # Обработчик нажатия кнопок содержания расписания
+@bot.message_handler(func=lambda message: message.text in schedule_contents)
+def handle_schedule_button(message):
+    # Получение индекса кнопки, чтобы использовать его для получения соответствующей ссылки
+    index = schedule_contents.index(message.text)
+    # Отправка содержания расписания и ссылки на таблицу пользователю
+    send_schedule_to_user(bot, message.chat.id, [schedule_contents[index]], [schedule_links[index]])
+
+# Обработчик нажатия кнопок с днями недели
 @bot.message_handler(func=lambda message: any(message.text.startswith(day) for day in ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"]))
 def handle_day_button(message):
     chosen_day = message.text
@@ -144,14 +152,6 @@ def handle_back_button(message):
     bot.send_message(message.chat.id, "Нажимай 'Стартуем', чтобы получить расписание", reply_markup=keyboard)
     logging.info(f"Отправлено сообщение 'Нажимай Старт чтобы получить расписание' пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
 
-# Обработчик кнопки "Скинь все"
-@bot.message_handler(func=lambda message: message.text == 'Скинь все')
-def handle_send_all_button(message):
-    # Получение содержимого расписания и ссылок
-    schedule_contents, schedule_links = get_schedule_info()
-    # Отправка всех расписаний с ссылками на таблицы
-    send_schedule_to_user(bot, message.chat.id, schedule_contents, schedule_links)
-
 # Запуск бота
 def main():
     logging.info("Запуск бота...")
@@ -159,4 +159,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
