@@ -19,12 +19,13 @@ def get_schedule_info():
         return None, None
 
 # Функция для отправки расписания пользователю в личные сообщения
-def send_schedule_to_user(bot, user_id, schedule_contents):
-    if schedule_contents:
-        for content in schedule_contents:
-            bot.send_message(user_id, content)
+def send_schedule_to_user(bot, user_id, schedule_contents, schedule_links):
+    if schedule_contents and schedule_links:
+        for content, link in zip(schedule_contents, schedule_links):
+            message = f"{content}\n{link}"
+            bot.send_message(user_id, message)
     else:
-        bot.send_message(user_id, "Не удалось найти содержимое расписания.")
+        bot.send_message(user_id, "Не удалось найти содержимое расписания или ссылки на таблицы.")
 
 # Получение токена вашего бота
 bot_token = '6594143932:AAEwYI8HxNfFPpCRqjEKz9RngAfcUvmnh8M'
@@ -63,15 +64,16 @@ def handle_schedule_button(message):
 # Обработчик нажатия кнопок дней недели
 @bot.message_handler(func=lambda message: message.text in ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница"])
 def handle_day_button(message):
-    # Получение содержимого расписания
-    schedule_contents, _ = get_schedule_info()
+    # Получение содержимого расписания и ссылок
+    schedule_contents, schedule_links = get_schedule_info()
     # Отправка расписания на выбранный день
-    if schedule_contents:
+    if schedule_contents and schedule_links:
         day = message.text.upper()  # Приводим к верхнему регистру, чтобы сравнивать с текстом в расписании
-        day_schedule = [content for content in schedule_contents if day in content]
-        send_schedule_to_user(bot, message.chat.id, day_schedule)
+        day_schedule_contents = [content for content, link in zip(schedule_contents, schedule_links) if day in content]
+        day_schedule_links = [link for content, link in zip(schedule_contents, schedule_links) if day in content]
+        send_schedule_to_user(bot, message.chat.id, day_schedule_contents, day_schedule_links)
     else:
-        bot.send_message(message.chat.id, "Ошибка: не удалось получить содержимое расписания.")
+        bot.send_message(message.chat.id, "Ошибка: не удалось получить содержимое расписания или ссылки на таблицы.")
 
 # Основная функция
 def main():
