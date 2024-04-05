@@ -70,10 +70,9 @@ def handle_start_button(message):
             date_day = find_date_and_day(content)
             if date_day:
                 date, day = date_day
-                unique_days.add(day)  # Добавление уникального дня недели в множество
-                keyboard.add(day)
-        # Удаление кнопки "Без описания", если она есть
-        keyboard = remove_button_without_description(keyboard)
+                if day is not None:  # Проверка наличия дня недели
+                    unique_days.add(day)  # Добавление уникального дня недели в множество
+                    keyboard.add(day)
         # Добавление кнопки "Назад"
         button_back = types.KeyboardButton("Назад")
         keyboard.add(button_back)
@@ -91,37 +90,26 @@ def find_date_and_day(content):
     if any(char.isdigit() for char in content):
         date_parts = content.split()
         for part in date_parts:
-            if '.' in part and len(part) == 10:  # Проверка на формат "дд.мм.гггг"
+            if '.' in part and len(part) == 10:  # Проверка на формат даты
                 date = part
                 break
-    # Поиск дня недели в скобках
+    # Поиск дня недели
     if '(' in content and ')' in content:
-        start_index = content.find('(') + 1
-        end_index = content.find(')')
-        day = content[start_index:end_index]
+        day_start = content.find('(') + 1
+        day_end = content.find(')')
+        day = content[day_start:day_end]
     return date, day
 
-# Функция для удаления кнопки "Без описания", если она есть
-def remove_button_without_description(keyboard):
-    new_keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-    for button in keyboard.keyboard:
-        for key in button:
-            if key != "Без описания":
-                new_keyboard.add(key)
-    return new_keyboard
-
 # Обработчик нажатия кнопок содержания расписания
-@bot.message_handler(func=lambda message: message.text in ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница"])
+@bot.message_handler(func=lambda message: message.text in unique_days)
 def handle_day_button(message):
+    chosen_day = message.text
     # Получение содержимого расписания и ссылок
     schedule_contents, schedule_links = get_schedule_info()
     if schedule_contents and schedule_links:
-        chosen_day = message.text
-        # Поиск содержания расписания и ссылок для выбранного дня
         day_schedule_contents = []
         day_schedule_links = []
         for content, link in zip(schedule_contents, schedule_links):
-            # Поиск даты и дня недели в содержании расписания
             date_day = find_date_and_day(content)
             if date_day and date_day[1] == chosen_day:
                 day_schedule_contents.append(content)
