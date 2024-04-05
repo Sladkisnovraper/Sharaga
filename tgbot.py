@@ -49,6 +49,7 @@ bot = telebot.TeleBot(bot_token)
 # Обработчик команды /start
 @bot.message_handler(commands=['start'])
 def handle_start(message):
+    global unique_days
     # Получение содержимого расписания и ссылок
     schedule_contents, schedule_links = get_schedule_info()
     if schedule_contents and schedule_links:
