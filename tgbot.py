@@ -40,6 +40,24 @@ def send_schedule_to_user(bot, user_id, schedule_contents, schedule_links):
         bot.send_message(user_id, "Не удалось найти содержимое расписания или ссылки на таблицы.")
         logging.warning("Не удалось найти содержимое расписания или ссылки на таблицы.")
 
+# Функция для поиска даты и дня недели в содержании расписания
+def find_date_and_day(content):
+    date = None
+    day = None
+    # Поиск даты в формате "дд.мм.гггг"
+    if any(char.isdigit() for char in content):
+        date_parts = content.split()
+        for part in date_parts:
+            if '.' in part and len(part) == 10:  # Проверка на формат даты
+                date = part
+                break
+    # Поиск дня недели
+    if '(' in content and ')' in content:
+        day_start = content.find('(') + 1
+        day_end = content.find(')')
+        day = content[day_start:day_end]
+    return date, day
+
 # Получение токена вашего бота
 bot_token = '6594143932:AAEwYI8HxNfFPpCRqjEKz9RngAfcUvmnh8M'
 
