@@ -46,29 +46,23 @@ bot_token = '6594143932:AAEwYI8HxNfFPpCRqjEKz9RngAfcUvmnh8M'
 # Создание экземпляра бота
 bot = telebot.TeleBot(bot_token)
 
-# Обработчик кнопки "Стартуем"
-@bot.message_handler(func=lambda message: message.text == 'Стартуем')
-def handle_start_button(message):
-    bot.send_message(message.chat.id, "Выполняю команду /start...")
-    handle_start(message)  # Вызываем функцию обработки команды /start
-
-# Функция для обработки команды /start
-def handle_start(message):
-    # Удаление кнопки "Стартуем" и создание кнопки "Го узнаем"
-    keyboard = types.ReplyKeyboardRemove()
-    button_go_learn = types.KeyboardButton("Го узнаем")
-    keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-    keyboard.add(button_go_learn)
-    bot.send_message(message.chat.id, "Че там по расписанию?", reply_markup=keyboard)
-    logging.info(f"Отправлена клавиатура с кнопкой 'Го узнаем' пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
-
 # Обработчик команды /start
 @bot.message_handler(commands=['start'])
 def handle_start(message):
-    # Удаление кнопки "Стартуем" и создание кнопки "Го узнаем"
+    # Удаление всех кнопок и создание кнопки "Стартуем"
     keyboard = types.ReplyKeyboardRemove()
-    button_go_learn = types.KeyboardButton("Го узнаем")
+    button_start = types.KeyboardButton("Стартуем")
     keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
+    keyboard.add(button_start)
+    bot.send_message(message.chat.id, "Че там по расписанию?", reply_markup=keyboard)
+    logging.info(f"Отправлена клавиатура с кнопкой 'Стартуем' пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
+
+# Обработчик кнопки "Стартуем"
+@bot.message_handler(func=lambda message: message.text == 'Стартуем')
+def handle_start_button(message):
+    # Создание кнопки "Го узнаем" после нажатия кнопки "Стартуем"
+    keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
+    button_go_learn = types.KeyboardButton("Го узнаем")
     keyboard.add(button_go_learn)
     bot.send_message(message.chat.id, "Че там по расписанию?", reply_markup=keyboard)
     logging.info(f"Отправлена клавиатура с кнопкой 'Го узнаем' пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
@@ -147,12 +141,6 @@ def handle_back_button(message):
     keyboard.add(button_start)
     bot.send_message(message.chat.id, "Че там по расписанию?", reply_markup=keyboard)
     logging.info(f"Отправлена клавиатура с кнопкой 'Стартуем' пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
-
-    # Добавление кнопки "Го узнаем"
-    button_go_learn = types.KeyboardButton("Го узнаем")
-    keyboard.add(button_go_learn)
-    bot.send_message(message.chat.id, "Че там по расписанию?", reply_markup=keyboard)
-    logging.info(f"Отправлена клавиатура с кнопкой 'Го узнаем' пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
 
 # Запуск бота
 def main():
