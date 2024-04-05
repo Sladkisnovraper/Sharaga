@@ -49,20 +49,10 @@ bot = telebot.TeleBot(bot_token)
 # Обработчик команды /start
 @bot.message_handler(commands=['start'])
 def handle_start(message):
-    # Удаление всех кнопок и создание кнопки "Стартуем"
+    # Удаление кнопки "Стартуем" и создание кнопки "Го узнаем"
     keyboard = types.ReplyKeyboardRemove()
-    button_start = types.KeyboardButton("Стартуем")
-    keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-    keyboard.add(button_start)
-    bot.send_message(message.chat.id, "Че там по расписанию?", reply_markup=keyboard)
-    logging.info(f"Отправлена клавиатура с кнопкой 'Стартуем' пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
-
-# Обработчик кнопки "Стартуем"
-@bot.message_handler(func=lambda message: message.text == 'Стартуем')
-def handle_start_button(message):
-    # Создание кнопки "Го узнаем" после нажатия кнопки "Стартуем"
-    keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
     button_go_learn = types.KeyboardButton("Го узнаем")
+    keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
     keyboard.add(button_go_learn)
     bot.send_message(message.chat.id, "Че там по расписанию?", reply_markup=keyboard)
     logging.info(f"Отправлена клавиатура с кнопкой 'Го узнаем' пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
@@ -87,9 +77,6 @@ def handle_go_learn_button(message):
         # Добавление кнопки "Назад"
         button_back = types.KeyboardButton("Назад")
         keyboard.add(button_back)
-        # Добавление кнопки "Скинь все"
-        button_send_all = types.KeyboardButton("Скинь все")
-        keyboard.add(button_send_all)
         bot.send_message(message.chat.id, "На какой день?", reply_markup=keyboard)
         logging.info(f"Отправлена клавиатура с кнопками содержания расписания пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
     else:
@@ -137,20 +124,13 @@ def handle_day_button(message):
 # Обработчик кнопки "Назад"
 @bot.message_handler(func=lambda message: message.text == 'Назад')
 def handle_back_button(message):
-    # Удаление кнопки "Назад" и создание кнопки "Стартуем"
+    # Удаление всех кнопок и отправка клавиатуры с кнопкой "Го узнаем"
+    keyboard = types.ReplyKeyboardRemove()
+    button_go_learn = types.KeyboardButton("Го узнаем")
     keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-    button_start = types.KeyboardButton("Стартуем")
-    keyboard.add(button_start)
-    bot.send_message(message.chat.id, "Нажимай 'Стартуем', чтобы получить расписание", reply_markup=keyboard)
-    logging.info(f"Отправлено сообщение 'Нажимай Старт чтобы получить расписание' пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
-
-# Обработчик кнопки "Скинь все"
-@bot.message_handler(func=lambda message: message.text == 'Скинь все')
-def handle_send_all_button(message):
-    # Получение содержимого расписания и ссылок
-    schedule_contents, schedule_links = get_schedule_info()
-    # Отправка всех расписаний с ссылками на таблицы
-    send_schedule_to_user(bot, message.chat.id, schedule_contents, schedule_links)
+    keyboard.add(button_go_learn)
+    bot.send_message(message.chat.id, "Че там по расписанию?", reply_markup=keyboard)
+    logging.info(f"Отправлена клавиатура с кнопкой 'Го узнаем' пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
 
 # Запуск бота
 def main():
@@ -159,4 +139,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
