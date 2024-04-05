@@ -71,7 +71,7 @@ def handle_start_button(message):
             if date_day:
                 date, day = date_day
                 unique_days.add(day)  # Добавление уникального дня недели в множество
-                keyboard.add(types.KeyboardButton(day))
+                keyboard.add(day)
         # Удаление кнопки "Без описания", если она есть
         keyboard = remove_button_without_description(keyboard)
         # Добавление кнопки "Назад"
