@@ -40,7 +40,7 @@ def handle_start(message):
     keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
     button_start = types.KeyboardButton('Стартуем')
     keyboard.add(button_start)
-    bot.send_message(message.chat.id, "Кнопку 'Старт' нажимай", reply_markup=keyboard)
+    bot.send_message(message.chat.id, "Кнопку Старт нажимай", reply_markup=keyboard)
 
 # Обработчик нажатия кнопки "Стартуем"
 @bot.message_handler(func=lambda message: message.text == 'Стартуем')
@@ -86,8 +86,22 @@ def handle_reset_button(message):
     # Отправка всего расписания
     if schedule_contents and schedule_links:
         send_schedule_to_user(bot, message.chat.id, schedule_contents, schedule_links)
+        # Удаление кнопки "Скинуть все" и добавление кнопки "Назад"
+        keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
+        button_back = types.KeyboardButton('Назад')
+        keyboard.add(button_back)
+        bot.send_message(message.chat.id, "Расписание отправлено. Нажмите Назад, чтобы вернуться.", reply_markup=keyboard)
     else:
         bot.send_message(message.chat.id, "Ошибка: не удалось получить содержимое расписания или ссылки на таблицы.")
+
+# Обработчик нажатия кнопки "Назад"
+@bot.message_handler(func=lambda message: message.text == 'Назад')
+def handle_back_button(message):
+    # Удаление всех кнопок кроме кнопки "Стартуем"
+    keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
+    button_start = types.KeyboardButton('Стартуем')
+    keyboard.add(button_start)
+    bot.send_message(message.chat.id, "Нажмите Стартуем, чтобы начать заново.", reply_markup=keyboard)
 
 # Основная функция
 def main():
