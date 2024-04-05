@@ -8,8 +8,11 @@ from telebot import types
 logging.basicConfig(level=logging.INFO)
 
 # Функция для получения ссылки на профиль пользователя Telegram
-def get_user_profile_link(chat_id):
-    return f"https://t.me/{chat_id}"
+def get_user_profile_link(chat_id, username):
+    if username:
+        return f"https://t.me/{username}"
+    else:
+        return f"https://t.me/user{chat_id}"
 
 # Функция для получения содержимого ссылок и самих ссылок на расписание
 def get_schedule_info():
@@ -32,7 +35,7 @@ def send_schedule_to_user(bot, user_id, schedule_contents, schedule_links):
         for content, link in zip(schedule_contents, schedule_links):
             message = f"{content}\n{link}"
             bot.send_message(user_id, message)
-            logging.info(f"Отправлено расписание пользователю {get_user_profile_link(user_id)}")
+            logging.info(f"Отправлено расписание пользователю {get_user_profile_link(user_id, None)}")
     else:
         bot.send_message(user_id, "Не удалось найти содержимое расписания или ссылки на таблицы.")
         logging.warning("Не удалось найти содержимое расписания или ссылки на таблицы.")
@@ -51,7 +54,7 @@ def handle_start(message):
     button_start = types.KeyboardButton('Стартуем')
     keyboard.add(button_start)
     bot.send_message(message.chat.id, "Кнопку 'Старт' нажимай", reply_markup=keyboard)
-    logging.info(f"Отправлена клавиатура пользователю {get_user_profile_link(message.chat.id)}")
+    logging.info(f"Отправлена клавиатура пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
 
 # Обработчик нажатия кнопки "Стартуем"
 @bot.message_handler(func=lambda message: message.text == 'Стартуем')
@@ -61,7 +64,7 @@ def handle_start_button(message):
     button_schedule = types.KeyboardButton('Го узнаем')
     keyboard.add(button_schedule)
     bot.send_message(message.chat.id, "Че там по расписанию?", reply_markup=keyboard)
-    logging.info(f"Отправлена клавиатура с кнопкой 'Го узнаем' пользователю {get_user_profile_link(message.chat.id)}")
+    logging.info(f"Отправлена клавиатура с кнопкой 'Го узнаем' пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
 
 # Обработчик нажатия кнопки "Го узнаем"
 @bot.message_handler(func=lambda message: message.text == 'Го узнаем')
@@ -73,9 +76,10 @@ def handle_schedule_button(message):
     keyboard.add(*buttons)
     # Добавление кнопок "Скинуть все" и "Назад"
     button_reset = types.KeyboardButton("Скинуть все")
-    keyboard.add(button_reset)
+    button_back = types.KeyboardButton("Назад")
+    keyboard.add(button_reset, button_back)
     bot.send_message(message.chat.id, "На какой день?", reply_markup=keyboard)
-    logging.info(f"Отправлена клавиатура с кнопками дней недели пользователю {get_user_profile_link(message.chat.id)}")
+    logging.info(f"Отправлена клавиатура с кнопками дней недели пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
 
 # Обработчик нажатия кнопок дней недели
 @bot.message_handler(func=lambda message: message.text in ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница"])
@@ -102,13 +106,13 @@ def handle_reset_button(message):
         send_schedule_to_user(bot, message.chat.id, schedule_contents, schedule_links)
         # Удаление кнопки "Скинуть все"
         bot.send_message(message.chat.id, "Расписание отправлено.")
-        logging.info(f"Отправлено расписание пользователю {get_user_profile_link(message.chat.id)}")
+        logging.info(f"Отправлено расписание пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
         # Добавление кнопки "Назад"
         keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
         button_back = types.KeyboardButton('Назад')
         keyboard.add(button_back)
         bot.send_message(message.chat.id, "Нажмите 'Назад', чтобы вернуться.", reply_markup=keyboard)
-        logging.info(f"Отправлена клавиатура с кнопкой 'Назад' пользователю {get_user_profile_link(message.chat.id)}")
+        logging.info(f"Отправлена клавиатура с кнопкой 'Назад' пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
     else:
         bot.send_message(message.chat.id, "Ошибка: не удалось получить содержимое расписания или ссылки на таблицы.")
         logging.warning("Ошибка при получении содержимого расписания или ссылок на таблицы.")
@@ -121,7 +125,7 @@ def handle_back_button(message):
     button_start = types.KeyboardButton('Стартуем')
     keyboard.add(button_start)
     bot.send_message(message.chat.id, "Нажмите 'Стартуем', чтобы начать заново.", reply_markup=keyboard)
-    logging.info(f"Отправлена клавиатура с кнопкой 'Стартуем' пользователю {get_user_profile_link(message.chat.id)}")
+    logging.info(f"Отправлена клавиатура с кнопкой 'Стартуем' пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
 
 # Основная функция
 def main():
@@ -130,4 +134,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-        
+    
