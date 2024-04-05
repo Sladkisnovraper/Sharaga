@@ -87,6 +87,9 @@ def handle_go_learn_button(message):
         # Добавление кнопки "Назад"
         button_back = types.KeyboardButton("Назад")
         keyboard.add(button_back)
+        # Добавление кнопки "Скинь все"
+        button_send_all = types.KeyboardButton("Скинь все")
+        keyboard.add(button_send_all)
         bot.send_message(message.chat.id, "На какой день?", reply_markup=keyboard)
         logging.info(f"Отправлена клавиатура с кнопками содержания расписания пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
     else:
@@ -141,6 +144,14 @@ def handle_back_button(message):
     bot.send_message(message.chat.id, "Нажимай 'Стартуем', чтобы получить расписание", reply_markup=keyboard)
     logging.info(f"Отправлено сообщение 'Нажимай Старт чтобы получить расписание' пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
 
+# Обработчик кнопки "Скинь все"
+@bot.message_handler(func=lambda message: message.text == 'Скинь все')
+def handle_send_all_button(message):
+    # Получение содержимого расписания и ссылок
+    schedule_contents, schedule_links = get_schedule_info()
+    # Отправка всех расписаний с ссылками на таблицы
+    send_schedule_to_user(bot, message.chat.id, schedule_contents, schedule_links)
+
 # Запуск бота
 def main():
     logging.info("Запуск бота...")
@@ -148,3 +159,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
