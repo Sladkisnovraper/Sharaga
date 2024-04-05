@@ -49,20 +49,11 @@ bot = telebot.TeleBot(bot_token)
 # Обработчик команды /start
 @bot.message_handler(commands=['start'])
 def handle_start(message):
-    # Создание клавиатуры
-    keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-    button_start = types.KeyboardButton('Стартуем')
-    keyboard.add(button_start)
-    bot.send_message(message.chat.id, "Кнопку 'Старт' нажимай", reply_markup=keyboard)
-    logging.info(f"Отправлена клавиатура пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
-
-# Обработчик нажатия кнопки "Стартуем"
-@bot.message_handler(func=lambda message: message.text == 'Стартуем')
-def handle_start_button(message):
+    global unique_days
     # Получение содержимого расписания и ссылок
     schedule_contents, schedule_links = get_schedule_info()
     if schedule_contents and schedule_links:
-        # Создание клавиатуры с кнопками содержания расписания
+        # Создание клавиатуры
         keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
         unique_days = set()  # Множество для хранения уникальных дней недели
         for content in schedule_contents:
