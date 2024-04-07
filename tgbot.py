@@ -11,6 +11,7 @@ logging.basicConfig(level=logging.INFO)
 # Глобальные переменные для хранения предыдущего состояния расписания
 previous_schedule_contents = []
 previous_schedule_links = []
+update_attempts = 0
 
 # Функция для получения ссылки на профиль пользователя Telegram
 def get_user_profile_link(chat_id, username):
@@ -51,14 +52,18 @@ def send_schedule_to_user(bot, user_id, schedule_content, schedule_link):
 
 # Функция для обновления расписания
 def update_schedule():
-    global previous_schedule_contents, previous_schedule_links
+    global previous_schedule_contents, previous_schedule_links, update_attempts
     new_schedule_contents, new_schedule_links = get_shortened_schedule_info()
     if new_schedule_contents and new_schedule_links:
         if new_schedule_contents != previous_schedule_contents or new_schedule_links != previous_schedule_links:
             # Если обновление расписания обнаружено, обновляем предыдущее состояние
             previous_schedule_contents = new_schedule_contents
             previous_schedule_links = new_schedule_links
+            # Сбрасываем счетчик попыток
+            update_attempts = 0
             return True
+    # Увеличиваем счетчик попыток и возвращаем False
+    update_attempts += 1
     return False
 
 # Получение токена вашего бота
@@ -112,7 +117,8 @@ def handle_day_button(message):
         if update_schedule():
             bot.send_message(message.chat.id, "Расписание обновлено.")
         else:
-            bot.send_message(message.chat.id, "Нового пока нету.")
+            global update_attempts
+            bot.send_message(message.chat.id, f"Нового пока нету. Попытка ({update_attempts})")
     else:
         # Получение сокращенного расписания и ссылок
         schedule_contents, schedule_links = get_shortened_schedule_info()
