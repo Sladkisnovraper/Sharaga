@@ -93,6 +93,12 @@ def handle_day_button(message):
         bot.send_message(message.chat.id, "Ошибка: не удалось получить сокращенное содержимое расписания или ссылки на таблицы.")
         logging.warning("Ошибка при получении сокращенного содержимого расписания или ссылок на таблицы.")
 
+# Обработчик нажатия кнопки "Назад"
+@bot.message_handler(func=lambda message: message.text == 'Назад')
+def handle_back_button(message):
+    # Перезапуск команды /start
+    handle_start(message)
+
 # Основная функция
 def main():
     # Запуск бота
