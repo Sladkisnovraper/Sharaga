@@ -8,6 +8,10 @@ import re
 # Установка уровня логгирования для отображения отладочных сообщений в терминале
 logging.basicConfig(level=logging.INFO)
 
+# Глобальные переменные для хранения предыдущего состояния расписания
+previous_schedule_contents = []
+previous_schedule_links = []
+
 # Функция для получения ссылки на профиль пользователя Telegram
 def get_user_profile_link(chat_id, username):
     if username:
@@ -45,6 +49,18 @@ def send_schedule_to_user(bot, user_id, schedule_content, schedule_link):
     bot.send_message(user_id, message)
     logging.info(f"Отправлено расписание пользователю {get_user_profile_link(user_id, None)}")
 
+# Функция для обновления расписания
+def update_schedule():
+    global previous_schedule_contents, previous_schedule_links
+    new_schedule_contents, new_schedule_links = get_shortened_schedule_info()
+    if new_schedule_contents and new_schedule_links:
+        if new_schedule_contents != previous_schedule_contents or new_schedule_links != previous_schedule_links:
+            # Если обновление расписания обнаружено, обновляем предыдущее состояние
+            previous_schedule_contents = new_schedule_contents
+            previous_schedule_links = new_schedule_links
+            return True
+    return False
+
 # Получение токена вашего бота
 bot_token = '6594143932:AAEwYI8HxNfFPpCRqjEKz9RngAfcUvmnh8M'
 
@@ -71,6 +87,9 @@ def handle_start_button(message):
         keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
         for content in schedule_contents:
             keyboard.add(types.KeyboardButton(content))
+        # Добавление кнопки "Обновить"
+        button_update = types.KeyboardButton('Обновить')
+        keyboard.add(button_update)
         bot.send_message(message.chat.id, "Выберите дату:", reply_markup=keyboard)
         logging.info(f"Отправлена клавиатура с кнопками содержания расписания пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
     else:
@@ -80,15 +99,21 @@ def handle_start_button(message):
 # Обработчик нажатия кнопок содержания расписания
 @bot.message_handler(func=lambda message: True)
 def handle_day_button(message):
-    # Получение сокращенного расписания и ссылок
-    schedule_contents, schedule_links = get_shortened_schedule_info()
-    if schedule_contents and schedule_links:
-        chosen_day_content = message.text
-        chosen_day_index = schedule_contents.index(chosen_day_content)
-        send_schedule_to_user(bot, message.chat.id, chosen_day_content, schedule_links[chosen_day_index])
+    if message.text == 'Обновить':
+        if update_schedule():
+            bot.send_message(message.chat.id, "Расписание обновлено.")
+        else:
+            bot.send_message(message.chat.id, "Нового пока нету.")
     else:
-        bot.send_message(message.chat.id, "Ошибка: не удалось получить сокращенное содержимое расписания или ссылки на таблицы.")
-        logging.warning("Ошибка при получении сокращенного содержимого расписания или ссылок на таблицы.")
+        # Получение сокращенного расписания и ссылок
+        schedule_contents, schedule_links = get_shortened_schedule_info()
+        if schedule_contents and schedule_links:
+            chosen_day_content = message.text
+            chosen_day_index = schedule_contents.index(chosen_day_content)
+            send_schedule_to_user(bot, message.chat.id, chosen_day_content, schedule_links[chosen_day_index])
+        else:
+            bot.send_message(message.chat.id, "Ошибка: не удалось получить сокращенное содержимое расписания или ссылки на таблицы.")
+            logging.warning("Ошибка при получении сокращенного содержимого расписания или ссылок на таблицы.")
 
 # Основная функция
 def main():
