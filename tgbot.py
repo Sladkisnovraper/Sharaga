@@ -71,7 +71,9 @@ bot = telebot.TeleBot(bot_token)
 @bot.message_handler(func=lambda message: message.text == 'Назад')
 def handle_back_button(message):
     # Удаляем все кнопки в клавиатуре
-    keyboard = types.ReplyKeyboardRemove()
+    keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
+    button_start = types.KeyboardButton('Стартуем')
+    keyboard.add(button_start)
     bot.send_message(message.chat.id, "Давайте начнем заново.", reply_markup=keyboard)
     logging.info(f"Клавиатура очищена для пользователя {get_user_profile_link(message.chat.id, message.from_user.username)}")
 
