@@ -61,8 +61,8 @@ def handle_start(message):
     bot.send_message(message.chat.id, "Нажмите 'Стартуем', чтобы начать.", reply_markup=keyboard)
     logging.info(f"Отправлена клавиатура пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
 
-# Обработчик нажатия кнопки "Стартуем"
-@bot.message_handler(func=lambda message: message.text == 'Стартуем')
+# Обработчик нажатия кнопки "Стартуем" или "Назад"
+@bot.message_handler(func=lambda message: message.text == 'Стартуем' or message.text == 'Назад')
 def handle_start_button(message):
     # Получение сокращенного расписания и ссылок
     schedule_contents, schedule_links = get_shortened_schedule_info()
@@ -86,18 +86,15 @@ def handle_day_button(message):
     # Получение сокращенного расписания и ссылок
     schedule_contents, schedule_links = get_shortened_schedule_info()
     if schedule_contents and schedule_links:
-        chosen_day_content = message.text
-        chosen_day_index = schedule_contents.index(chosen_day_content)
-        send_schedule_to_user(bot, message.chat.id, chosen_day_content, schedule_links[chosen_day_index])
+        if message.text == 'Назад':
+            handle_start_button(message)
+        else:
+            chosen_day_content = message.text
+            chosen_day_index = schedule_contents.index(chosen_day_content)
+            send_schedule_to_user(bot, message.chat.id, chosen_day_content, schedule_links[chosen_day_index])
     else:
         bot.send_message(message.chat.id, "Ошибка: не удалось получить сокращенное содержимое расписания или ссылки на таблицы.")
         logging.warning("Ошибка при получении сокращенного содержимого расписания или ссылок на таблицы.")
-
-# Обработчик нажатия кнопки "Назад"
-@bot.message_handler(func=lambda message: message.text == 'Назад')
-def handle_back_button(message):
-    # Перезапуск команды /start
-    handle_start(message)
 
 # Основная функция
 def main():
