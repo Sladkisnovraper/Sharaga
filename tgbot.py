@@ -87,7 +87,7 @@ def handle_day_button(message):
     schedule_contents, schedule_links = get_shortened_schedule_info()
     if schedule_contents and schedule_links:
         if message.text == 'Назад':
-            handle_start_button(message)
+            handle_back_button(message)
         else:
             chosen_day_content = message.text
             chosen_day_index = schedule_contents.index(chosen_day_content)
@@ -95,6 +95,15 @@ def handle_day_button(message):
     else:
         bot.send_message(message.chat.id, "Ошибка: не удалось получить сокращенное содержимое расписания или ссылки на таблицы.")
         logging.warning("Ошибка при получении сокращенного содержимого расписания или ссылок на таблицы.")
+
+# Обработчик нажатия кнопки "Назад"
+def handle_back_button(message):
+    # Удаление всех кнопок кроме кнопки "Стартуем"
+    keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
+    button_start = types.KeyboardButton('Стартуем')
+    keyboard.add(button_start)
+    bot.send_message(message.chat.id, "Нажмите 'Стартуем', чтобы начать.", reply_markup=keyboard)
+    logging.info(f"Отправлена клавиатура с кнопкой 'Стартуем' пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
 
 # Основная функция
 def main():
