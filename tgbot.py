@@ -54,6 +54,16 @@ bot = telebot.TeleBot(bot_token)
 # Обработчик команды /start
 @bot.message_handler(commands=['start'])
 def handle_start(message):
+    # Создание клавиатуры с кнопкой "Стартуем"
+    keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
+    button_start = types.KeyboardButton('Стартуем')
+    keyboard.add(button_start)
+    bot.send_message(message.chat.id, "Нажмите 'Стартуем', чтобы начать.", reply_markup=keyboard)
+    logging.info(f"Отправлена клавиатура пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
+
+# Обработчик нажатия кнопки "Стартуем"
+@bot.message_handler(func=lambda message: message.text == 'Стартуем')
+def handle_start_button(message):
     # Получение сокращенного расписания и ссылок
     schedule_contents, schedule_links = get_shortened_schedule_info()
     if schedule_contents and schedule_links:
