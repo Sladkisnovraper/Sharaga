@@ -85,27 +85,6 @@ def handle_back_button(message):
     bot.send_message(message.chat.id, "Давайте начнем заново.", reply_markup=keyboard)
     logging.info(f"Клавиатура очищена для пользователя {get_user_profile_link(message.chat.id, message.from_user.username)}")
 
-# Обработчик нажатия кнопки "Стартуем"
-@bot.message_handler(func=lambda message: message.text == 'Стартуем')
-def handle_start_button(message):
-    # Создание клавиатуры с кнопкой "Скинь все"
-    keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-    button_send_all = types.KeyboardButton('Скинь все')
-    keyboard.add(button_send_all)
-    bot.send_message(message.chat.id, "Выберите дату или нажмите 'Скинь все':", reply_markup=keyboard)
-    logging.info(f"Отправлена клавиатура с кнопкой 'Скинь все' пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
-
-# Обработчик нажатия кнопки "Скинь все"
-@bot.message_handler(func=lambda message: message.text == 'Скинь все')
-def handle_send_all_button(message):
-    schedule_contents, schedule_links = get_shortened_schedule_info()
-    if schedule_contents and schedule_links:
-        for content, link in zip(schedule_contents, schedule_links):
-            send_schedule_to_user(bot, message.chat.id, content, link)
-    else:
-        bot.send_message(message.chat.id, "Ошибка: не удалось получить сокращенное содержимое расписания или ссылки на таблицы.")
-        logging.warning("Ошибка при получении сокращенного содержимого расписания или ссылок на таблицы.")
-
 # Обработчик команды /start
 @bot.message_handler(commands=['start'])
 def handle_start(message):
@@ -115,6 +94,24 @@ def handle_start(message):
     keyboard.add(button_start)
     bot.send_message(message.chat.id, "Нажмите 'Стартуем', чтобы начать.", reply_markup=keyboard)
     logging.info(f"Отправлена клавиатура пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
+
+# Обработчик нажатия кнопки "Стартуем"
+@bot.message_handler(func=lambda message: message.text == 'Стартуем')
+def handle_start_button(message):
+    # Создание клавиатуры с кнопками содержания расписания
+    keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
+    schedule_contents, _ = get_shortened_schedule_info()
+    if schedule_contents:
+        for content in schedule_contents:
+            keyboard.add(types.KeyboardButton(content))
+        # Добавление кнопки "Обновить"
+        button_update = types.KeyboardButton('Обновить')
+        keyboard.add(button_update)
+    # Добавление кнопки "Назад"
+    button_back = types.KeyboardButton('Назад')
+    keyboard.add(button_back)
+    bot.send_message(message.chat.id, "Выберите дату:", reply_markup=keyboard)
+    logging.info(f"Отправлена клавиатура с кнопками содержания расписания пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
 
 # Обработчик нажатия кнопок содержания расписания
 @bot.message_handler(func=lambda message: True)
