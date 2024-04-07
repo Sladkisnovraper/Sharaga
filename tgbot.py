@@ -3,6 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 import telebot
 from telebot import types
+import re
 
 # Установка уровня логгирования для отображения отладочных сообщений в терминале
 logging.basicConfig(level=logging.INFO)
@@ -14,31 +15,35 @@ def get_user_profile_link(chat_id, username):
     else:
         return f"https://t.me/user{chat_id}"
 
-# Функция для получения содержимого ссылок и самих ссылок на расписание
-def get_schedule_info():
+# Функция для получения сокращенного расписания и ссылок на таблицы
+def get_shortened_schedule_info():
     try:
         url = "https://tcek63.ru/studentam/raspisanie-zanyatiy/"
         logging.info("Запрос страницы расписания...")
         response = requests.get(url)
         soup = BeautifulSoup(response.content, "html.parser")
         schedule_table = soup.find_all('div', class_='acc_body')[3].find('table').find('tbody')
-        schedule_contents = [a.text for a in schedule_table.find_all('a')]
-        schedule_links = [a['href'] for a in schedule_table.find_all('a')]
+        schedule_contents = []
+        schedule_links = []
+        for a in schedule_table.find_all('a'):
+            content = a.text.strip()  # Удаляем лишние пробелы
+            link = a['href']
+            # Находим дату и текст в скобках
+            date_text = re.search(r'(\d{2}\.\d{2}\.\d{4}).*?\((.*?)\)', content)
+            if date_text:
+                date, text = date_text.groups()
+                schedule_contents.append(f"{date} ({text})")
+                schedule_links.append(link)
         return schedule_contents, schedule_links
     except Exception as e:
-        logging.error(f"Ошибка при получении содержимого ссылок на расписание: {e}")
+        logging.error(f"Ошибка при получении сокращенного содержимого расписания: {e}")
         return None, None
 
 # Функция для отправки расписания пользователю в личные сообщения
-def send_schedule_to_user(bot, user_id, schedule_contents, schedule_links):
-    if schedule_contents and schedule_links:
-        for content, link in zip(schedule_contents, schedule_links):
-            message = f"{content}\n{link}"
-            bot.send_message(user_id, message)
-            logging.info(f"Отправлено расписание пользователю {get_user_profile_link(user_id, None)}")
-    else:
-        bot.send_message(user_id, "Не удалось найти содержимое расписания или ссылки на таблицы.")
-        logging.warning("Не удалось найти содержимое расписания или ссылки на таблицы.")
+def send_schedule_to_user(bot, user_id, schedule_content, schedule_link):
+    message = f"{schedule_content}\n{schedule_link}"
+    bot.send_message(user_id, message)
+    logging.info(f"Отправлено расписание пользователю {get_user_profile_link(user_id, None)}")
 
 # Получение токена вашего бота
 bot_token = '6594143932:AAEwYI8HxNfFPpCRqjEKz9RngAfcUvmnh8M'
@@ -49,74 +54,34 @@ bot = telebot.TeleBot(bot_token)
 # Обработчик команды /start
 @bot.message_handler(commands=['start'])
 def handle_start(message):
-    # Создание клавиатуры
-    keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-    button_start = types.KeyboardButton('Стартуем')
-    keyboard.add(button_start)
-    bot.send_message(message.chat.id, "Кнопку 'Старт' нажимай", reply_markup=keyboard)
-    logging.info(f"Отправлена клавиатура пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
-
-# Обработчик нажатия кнопки "Стартуем"
-@bot.message_handler(func=lambda message: message.text == 'Стартуем')
-def handle_start_button(message):
-    # Получение содержимого расписания и ссылок
-    schedule_contents, schedule_links = get_schedule_info()
+    # Получение сокращенного расписания и ссылок
+    schedule_contents, schedule_links = get_shortened_schedule_info()
     if schedule_contents and schedule_links:
         # Создание клавиатуры с кнопками содержания расписания
         keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-        unique_days = set()  # Множество для хранения уникальных дней недели
         for content in schedule_contents:
-            # Проверка наличия подстроки ' ('
-            if ' (' in content:
-                date, day = content.split(' (', 1)
-                unique_days.add(day[:-1])  # Добавление уникального дня недели в множество
-                keyboard.add(types.KeyboardButton(day[:-1]))
-            else:
-                date = content  # В качестве дня указываем что-то по умолчанию
-                day = "Без описания"
-                unique_days.add(day)
-                keyboard.add(types.KeyboardButton(day))
+            keyboard.add(types.KeyboardButton(content))
         # Добавление кнопки "Назад"
         button_back = types.KeyboardButton("Назад")
         keyboard.add(button_back)
-        bot.send_message(message.chat.id, "На какой день?", reply_markup=keyboard)
+        bot.send_message(message.chat.id, "Выберите дату:", reply_markup=keyboard)
         logging.info(f"Отправлена клавиатура с кнопками содержания расписания пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
     else:
-        bot.send_message(message.chat.id, "Ошибка: не удалось получить содержимое расписания или ссылки на таблицы.")
-        logging.warning("Ошибка при получении содержимого расписания или ссылок на таблицы.")
+        bot.send_message(message.chat.id, "Ошибка: не удалось получить сокращенное содержимое расписания или ссылки на таблицы.")
+        logging.warning("Ошибка при получении сокращенного содержимого расписания или ссылок на таблицы.")
 
 # Обработчик нажатия кнопок содержания расписания
-@bot.message_handler(func=lambda message: message.text in ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница"])
+@bot.message_handler(func=lambda message: True)
 def handle_day_button(message):
-    # Получение содержимого расписания и ссылок
-    schedule_contents, schedule_links = get_schedule_info()
+    # Получение сокращенного расписания и ссылок
+    schedule_contents, schedule_links = get_shortened_schedule_info()
     if schedule_contents and schedule_links:
-        chosen_day = message.text
-        # Поиск содержания расписания и ссылок для выбранного дня
-        day_schedule_contents = []
-        day_schedule_links = []
-        for content, link in zip(schedule_contents, schedule_links):
-            # Проверка наличия подстроки ' ('
-            if ' (' in content:
-                date, day = content.split(' (', 1)
-                if day[:-1] == chosen_day:
-                    day_schedule_contents.append(content)
-                    day_schedule_links.append(link)
-        # Отправка расписания на выбранный день
-        send_schedule_to_user(bot, message.chat.id, day_schedule_contents, day_schedule_links)
+        chosen_day_content = message.text
+        chosen_day_index = schedule_contents.index(chosen_day_content)
+        send_schedule_to_user(bot, message.chat.id, chosen_day_content, schedule_links[chosen_day_index])
     else:
-        bot.send_message(message.chat.id, "Ошибка: не удалось получить содержимое расписания или ссылки на таблицы.")
-        logging.warning("Ошибка при получении содержимого расписания или ссылок на таблицы.")
-
-# Обработчик нажатия кнопки "Назад"
-@bot.message_handler(func=lambda message: message.text == 'Назад')
-def handle_back_button(message):
-    # Удаление всех кнопок кроме кнопки "Стартуем"
-    keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-    button_start = types.KeyboardButton('Стартуем')
-    keyboard.add(button_start)
-    bot.send_message(message.chat.id, "Нажмите 'Стартуем', чтобы начать заново.", reply_markup=keyboard)
-    logging.info(f"Отправлена клавиатура с кнопкой 'Стартуем' пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
+        bot.send_message(message.chat.id, "Ошибка: не удалось получить сокращенное содержимое расписания или ссылки на таблицы.")
+        logging.warning("Ошибка при получении сокращенного содержимого расписания или ссылок на таблицы.")
 
 # Основная функция
 def main():
