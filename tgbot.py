@@ -61,8 +61,8 @@ def handle_start(message):
     bot.send_message(message.chat.id, "Нажмите 'Стартуем', чтобы начать.", reply_markup=keyboard)
     logging.info(f"Отправлена клавиатура пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
 
-# Обработчик нажатия кнопки "Стартуем" или "Назад"
-@bot.message_handler(func=lambda message: message.text == 'Стартуем' or message.text == 'Назад')
+# Обработчик нажатия кнопки "Стартуем"
+@bot.message_handler(func=lambda message: message.text == 'Стартуем')
 def handle_start_button(message):
     # Получение сокращенного расписания и ссылок
     schedule_contents, schedule_links = get_shortened_schedule_info()
@@ -71,9 +71,6 @@ def handle_start_button(message):
         keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
         for content in schedule_contents:
             keyboard.add(types.KeyboardButton(content))
-        # Добавление кнопки "Назад"
-        button_back = types.KeyboardButton("Назад")
-        keyboard.add(button_back)
         bot.send_message(message.chat.id, "Выберите дату:", reply_markup=keyboard)
         logging.info(f"Отправлена клавиатура с кнопками содержания расписания пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
     else:
@@ -86,24 +83,12 @@ def handle_day_button(message):
     # Получение сокращенного расписания и ссылок
     schedule_contents, schedule_links = get_shortened_schedule_info()
     if schedule_contents and schedule_links:
-        if message.text == 'Назад':
-            handle_back_button(message)
-        else:
-            chosen_day_content = message.text
-            chosen_day_index = schedule_contents.index(chosen_day_content)
-            send_schedule_to_user(bot, message.chat.id, chosen_day_content, schedule_links[chosen_day_index])
+        chosen_day_content = message.text
+        chosen_day_index = schedule_contents.index(chosen_day_content)
+        send_schedule_to_user(bot, message.chat.id, chosen_day_content, schedule_links[chosen_day_index])
     else:
         bot.send_message(message.chat.id, "Ошибка: не удалось получить сокращенное содержимое расписания или ссылки на таблицы.")
         logging.warning("Ошибка при получении сокращенного содержимого расписания или ссылок на таблицы.")
-
-# Обработчик нажатия кнопки "Назад"
-def handle_back_button(message):
-    # Удаление всех кнопок кроме кнопки "Стартуем"
-    keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-    button_start = types.KeyboardButton('Стартуем')
-    keyboard.add(button_start)
-    bot.send_message(message.chat.id, "Нажмите 'Стартуем', чтобы начать.", reply_markup=keyboard)
-    logging.info(f"Отправлена клавиатура с кнопкой 'Стартуем' пользователю {get_user_profile_link(message.chat.id, message.from_user.username)}")
 
 # Основная функция
 def main():
