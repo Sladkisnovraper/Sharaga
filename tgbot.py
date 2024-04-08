@@ -1,9 +1,7 @@
 import logging
 import requests
 import telebot
-import pyautogui
 import os
-
 from bs4 import BeautifulSoup
 from telebot import types
 from PIL import ImageGrab
@@ -66,20 +64,14 @@ def update_schedule():
 
 # Функция для создания снимка экрана таблицы и отправки его пользователю
 def send_table_screenshot(bot, chat_id):
-    # Получаем координаты области с таблицей
-    left, top, width, height = 100, 100, 800, 600
-    
-    # Делаем снимок экрана с заданными координатами
-    screenshot = pyautogui.screenshot(region=(left, top, width, height))
-
+    # Получаем снимок экрана
+    screenshot = ImageGrab.grab()
     # Сохраняем снимок во временный файл
     screenshot_path = "screenshot.png"
     screenshot.save(screenshot_path)
-
     # Отправляем снимок пользователю
     with open(screenshot_path, 'rb') as photo:
         bot.send_photo(chat_id, photo)
-
     # Удаляем временный файл
     os.remove(screenshot_path)
 
@@ -150,4 +142,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
