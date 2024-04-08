@@ -1,11 +1,10 @@
-import re
 import logging
 import requests
 import telebot
 import os
 from bs4 import BeautifulSoup
 from telebot import types
-from PIL import ImageGrab
+from mss import mss
 
 # Установка уровня логгирования для отображения отладочных сообщений в терминале
 logging.basicConfig(level=logging.INFO)
@@ -65,16 +64,13 @@ def update_schedule():
 
 # Функция для создания снимка экрана таблицы и отправки его пользователю
 def send_table_screenshot(bot, chat_id):
-    # Получаем снимок экрана
-    screenshot = ImageGrab.grab()
-    # Сохраняем снимок во временный файл
-    screenshot_path = "screenshot.png"
-    screenshot.save(screenshot_path)
-    # Отправляем снимок пользователю
-    with open(screenshot_path, 'rb') as photo:
-        bot.send_photo(chat_id, photo)
-    # Удаляем временный файл
-    os.remove(screenshot_path)
+    # Создаем экземпляр mss
+    with mss() as sct:
+        # Получаем снимок экрана и сохраняем его в файл
+        sct.shot(output='screenshot.png')
+        # Отправляем снимок пользователю
+        with open('screenshot.png', 'rb') as photo:
+            bot.send_photo(chat_id, photo)
 
 # Получение токена вашего бота
 bot_token = '6594143932:AAEwYI8HxNfFPpCRqjEKz9RngAfcUvmnh8M'
