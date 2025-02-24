@@ -20,7 +20,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-TOKEN = '7456873724:AAGUMY7sQm3fPaPH0hJ50PPtfSSHge83O4s'  # ⚠️ Замените на свой токен
+TOKEN = 'ВАШ_ТОКЕН'  # ⚠️ Замените на свой токен
 
 # Инициализация SQLite
 conn = sqlite3.connect('user_states.db', check_same_thread=False)
@@ -192,17 +192,23 @@ async def handle_audio(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         await update.message.reply_text('Ошибка обработки аудио')
 
 def main():
-    asyncio.run(check_ffmpeg())
+    # Исправление ошибки с event loop
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     
-    app = Application.builder().token(TOKEN).build()
-    
-    app.add_handler(CommandHandler('start', start))
-    app.add_handler(MessageHandler(filters.VIDEO, handle_video))
-    app.add_handler(MessageHandler(filters.VOICE, handle_audio))
-    app.add_handler(CallbackQueryHandler(button_handler))
-    
-    logger.info('Бот запущен')
-    app.run_polling()
+    try:
+        loop.run_until_complete(check_ffmpeg())
+        
+        app = Application.builder().token(TOKEN).build()
+        app.add_handler(CommandHandler('start', start))
+        app.add_handler(MessageHandler(filters.VIDEO, handle_video))
+        app.add_handler(MessageHandler(filters.VOICE, handle_audio))
+        app.add_handler(CallbackQueryHandler(button_handler))
+        
+        logger.info('Бот запущен')
+        app.run_polling()
+    finally:
+        loop.close()
 
 if __name__ == '__main__':
     os.makedirs('video_storage', exist_ok=True)
